@@ -261,6 +261,16 @@ nav{background:var(--c1d);height:64px;padding:0 32px;display:flex;
            font-weight:300;letter-spacing:.03em}
 .plan-feat::before{content:'—';color:var(--gold);font-weight:500;flex-shrink:0}
 
+/* Scarcity notice */
+.quota-notice{display:flex;align-items:center;gap:12px;
+              background:rgba(184,146,60,.06);border:1px solid rgba(184,146,60,.3);
+              border-radius:2px;padding:14px 20px;margin-bottom:28px;
+              font-size:12px;color:var(--c1);letter-spacing:.05em;line-height:1.6}
+.quota-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);
+           flex-shrink:0;animation:pulse-dot 2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.quota-notice strong{color:var(--gold);font-weight:600}
+
 /* CTA */
 .cta-area{text-align:center;padding:64px 0 80px}
 .cta-area p{font-size:11px;color:var(--muted);margin-top:24px;letter-spacing:.2em}
@@ -625,6 +635,10 @@ footer span{color:var(--gold2);font-family:var(--latin);font-weight:500;letter-s
     </div>
 
     <div class="sec-title">私享陪跑方案</div>
+    <div class="quota-notice">
+      <span class="quota-dot"></span>
+      <span>由于精力有限，ATLAS 每月陪跑名额<strong>严控 3 席</strong>，以确保每位学员获得完整的 1v1 深度投入。席位以确认沟通为准。</span>
+    </div>
     <div class="plans-grid" id="plans-grid"></div>
 
     <div class="share-bar">
@@ -636,6 +650,7 @@ footer span{color:var(--gold2);font-family:var(--latin);font-weight:500;letter-s
       <button class="btn btn-main" onclick="openContact()">
         申请 ATLAS 私享席位
       </button>
+      <p style="letter-spacing:.05em;color:var(--muted);margin-bottom:8px">每月严选 3 席 · 以沟通确认为准</p>
       <p>想重新评估?<a href="#" onclick="resetAll();return false">点击这里</a></p>
     </div>
   </div>
@@ -777,7 +792,7 @@ footer span{color:var(--gold2);font-family:var(--latin);font-weight:500;letter-s
   <div class="modal-box">
     <button class="modal-close" onclick="closeContact()">×</button>
     <h3>申请 ATLAS 私享席位</h3>
-    <p>扫码 1v1 沟通,严选行业专家与企业老板,席位有限</p>
+    <p>扫码 1v1 沟通，严选行业专家与企业老板<br><strong style="color:var(--gold)">每月限额 3 席</strong>，以确认沟通为准</p>
     <div class="modal-qr">ATLAS 顾问微信<br/>(替换为真实图)</div>
     <p style="font-size:12px">或邮件 · advisor@atlas.cn</p>
   </div>
@@ -1402,7 +1417,7 @@ function mockReply(text, ctx){
     return '您还未完成诊断,建议先用 5 分钟完成 AI 战力评估,再讨论具体路径。';
   }
   if (/(陪跑|方案|价格|费用|多少钱|席位)/i.test(t))
-    return 'ATLAS 私享陪跑三档(周期按个人进度定制):\n• **ATLAS · Foundation** 3-4 周 ¥7,980 — 认知框架 + 个人工作流构建\n• **ATLAS · Prime** 6-8 周 ¥16,800 — 最受欢迎,Agent + 真实业务深度介入\n• **ATLAS · Apex** 10-12 周 ¥29,800 — 系统 AI 战略 + 组织级落地能力\n\n席位严选,点页面底部"申请 ATLAS 私享席位"对接顾问。';
+    return 'ATLAS 私享陪跑三档(周期按个人进度定制):\n• **ATLAS · Foundation** 3-4 周 ¥7,980 — 认知框架 + 个人工作流构建\n• **ATLAS · Prime** 6-8 周 ¥16,800 — 最受欢迎,Agent + 真实业务深度介入\n• **ATLAS · Apex** 10-12 周 ¥29,800 — 系统 AI 战略 + 组织级落地能力\n\n⚠️ 由于精力有限，**每月仅限 3 席**，以确认沟通为准。点页面底部"申请 ATLAS 私享席位"对接顾问。';
   if (/(agent|自动化|claude code)/i.test(t))
     return 'Agent 是 2026 年专家与企业拉开身位的核心杠杆——它不只是答题,而是**自主执行多步业务**。\n\n推荐栈:\n• **Claude Code** — 决策推演、文档/数据自动化的旗舰\n• **WorkBuddy** — 中文办公场景\n• **n8n + Claude** — 企业级业务流自动化\n\nATLAS · Prime / Apex 均包含 Agent 工具专属部署。';
 

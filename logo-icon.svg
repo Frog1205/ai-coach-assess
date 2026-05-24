@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Main circle background -->
+  <circle cx="100" cy="100" r="94" fill="#0A2540"/>
+  <!-- Outer gold ring -->
+  <circle cx="100" cy="100" r="94" fill="none" stroke="#C9A844" stroke-width="3.5"/>
+  <!-- Inner gold ring -->
+  <circle cx="100" cy="100" r="87" fill="none" stroke="#C9A844" stroke-width="1.2" opacity="0.65"/>
+
+  <!-- Orbital planet dot (top-right, ~1 o'clock) -->
+  <circle cx="163" cy="35" r="12" fill="#C9A844"/>
+
+  <!-- Arc curve above mountains -->
+  <path d="M 50,80 Q 100,58 150,80"
+        fill="none" stroke="#C9A844" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- 4-pointed compass star -->
+  <polygon points="100,40 103.5,54 100,58 96.5,54" fill="#C9A844"/>
+  <polygon points="100,58 103.5,62 100,76 96.5,62" fill="#C9A844"/>
+  <polygon points="84,58 98,55 102,58 98,61" fill="#C9A844"/>
+  <polygon points="102,58 116,55 116,61 102,61" fill="#C9A844"/>
+  <circle cx="100" cy="58" r="3.5" fill="#C9A844"/>
+
+  <!-- Mountain silhouette -->
+  <!-- Main mountain shape (cream/white) -->
+  <path d="M 16,155
+           L 56,82 L 66,96
+           L 100,60
+           L 134,96 L 144,82
+           L 184,155 Z"
+        fill="#EDE8DC"/>
+
+  <!-- Snow highlights — left peak -->
+  <path d="M 56,82 L 66,96 L 60,96 Z" fill="white" opacity="0.6"/>
+  <!-- Snow highlights — center peak (brighter) -->
+  <path d="M 100,60 L 116,93 L 84,93 Z" fill="white" opacity="0.55"/>
+  <!-- Snow highlights — right peak -->
+  <path d="M 144,82 L 140,96 L 134,96 Z" fill="white" opacity="0.6"/>
+
+  <!-- Subtle glacier detail lines -->
+  <path d="M 100,60 L 95,80 M 100,60 L 105,80"
+        stroke="white" stroke-width="0.8" opacity="0.3"/>
+</svg>

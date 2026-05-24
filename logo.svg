@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 200">
+  <!-- ── Badge icon (left) ── -->
+  <g transform="translate(100,100)">
+    <!-- Main circle -->
+    <circle r="94" fill="#0A2540"/>
+    <circle r="94" fill="none" stroke="#C9A844" stroke-width="3.5"/>
+    <circle r="87" fill="none" stroke="#C9A844" stroke-width="1.2" opacity="0.65"/>
+
+    <!-- Orbital planet dot -->
+    <circle cx="63" cy="-65" r="12" fill="#C9A844"/>
+
+    <!-- Arc above mountains -->
+    <path d="M -50,-20 Q 0,-42 50,-20"
+          fill="none" stroke="#C9A844" stroke-width="2.2" stroke-linecap="round"/>
+
+    <!-- 4-pointed star (center 0,-42) -->
+    <polygon points="0,-58 3.5,-44 0,-40 -3.5,-44"  fill="#C9A844"/>
+    <polygon points="0,-40 3.5,-36 0,-22 -3.5,-36"  fill="#C9A844"/>
+    <polygon points="-16,-42 -2,-45 2,-42 -2,-39"   fill="#C9A844"/>
+    <polygon points="2,-42 16,-45 16,-39 2,-39"      fill="#C9A844"/>
+    <circle cx="0" cy="-42" r="3.5" fill="#C9A844"/>
+
+    <!-- Mountains -->
+    <path d="M -84,55 L -44,-18 L -34,-4 L 0,-40 L 34,-4 L 44,-18 L 84,55 Z"
+          fill="#EDE8DC"/>
+    <!-- Snow -->
+    <path d="M -44,-18 L -34,-4 L -40,-4 Z" fill="white" opacity="0.6"/>
+    <path d="M 0,-40 L 16,-7 L -16,-7 Z"    fill="white" opacity="0.55"/>
+    <path d="M 44,-18 L 40,-4 L 34,-4 Z"    fill="white" opacity="0.6"/>
+    <path d="M 0,-40 L -5,-20 M 0,-40 L 5,-20"
+          stroke="white" stroke-width="0.8" opacity="0.3"/>
+  </g>
+
+  <!-- ── ATLAS text ── -->
+  <text x="215" y="112"
+        font-family="Georgia,'Times New Roman',serif"
+        font-size="88" font-weight="700"
+        fill="#0A2540" letter-spacing="5">ATLAS</text>
+
+  <!-- Gold divider: line + diamond -->
+  <line x1="215" y1="130" x2="530" y2="130" stroke="#C9A844" stroke-width="1.2"/>
+  <polygon points="372,125 378,130 372,135 366,130" fill="#C9A844"/>
+
+  <!-- Tagline -->
+  <text x="372" y="155"
+        font-family="Arial,'Helvetica Neue',sans-serif"
+        font-size="13" fill="#4A5568"
+        text-anchor="middle" letter-spacing="0.4">AI Industry Experts &amp; Business Leaders</text>
+</svg>

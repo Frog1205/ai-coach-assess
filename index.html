@@ -3,24 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI能力摸底测评 | AI Coach 陪跑</title>
+<title>ATLAS · 专家与高管的 AI 战力私享陪跑</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js" onerror="console.warn('[ATLAS] config.js 未配置,仅本地模式运行')"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --c1:#123A6B;--c2:#1A73C8;--c3:#E8F3FF;--c4:#F7F9FC;
-  --or:#F07A1A;--gr:#0F9D6E;--pu:#6C3ABF;--re:#C0392B;
-  --txt:#1E1E1E;--muted:#666;--border:#DDE3ED;--wh:#fff;
-  --r:14px;--sh:0 2px 16px rgba(18,58,107,.08);--sh2:0 6px 28px rgba(18,58,107,.16)
+  --c1:#0A1A2E;        /* 主墨蓝 */
+  --c1d:#06111F;       /* 更深墨蓝 */
+  --c2:#1A3A5C;        /* 次墨蓝 */
+  --c3:#EDE7DA;        /* 宣纸米 */
+  --c4:#F5F1E8;        /* 宣纸底 */
+  --gold:#B8923C;      /* 古金 */
+  --gold2:#D4B062;     /* 亮金 */
+  --gold3:#8C6E2E;     /* 暗金 */
+  --seal:#9C3225;      /* 印泥红 */
+  --ink:#1A1410;       /* 墨色文字 */
+  --gr:#3A7D4F;
+  --pu:#4A2F6B;
+  --re:#9C3225;
+  --or:#B8923C;
+  --txt:#1A1410;
+  --muted:#7A6E5C;
+  --border:#D8CFB8;    /* 宣纸纹边 */
+  --wh:#fff;
+  --r:4px;             /* 锐角主导 */
+  --r-lg:8px;
+  --sh:0 2px 14px rgba(10,26,46,.08);
+  --sh2:0 8px 32px rgba(10,26,46,.16);
+  --serif:'Noto Serif SC','Source Han Serif SC','Songti SC',Georgia,serif;
+  --sans:'Noto Sans SC','PingFang SC','Microsoft YaHei',-apple-system,sans-serif;
+  --latin:'Cormorant Garamond','Noto Serif SC',Georgia,serif;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
-     background:var(--c4);color:var(--txt);min-height:100vh}
+body{font-family:var(--sans);background:var(--c4);color:var(--txt);min-height:100vh;
+     font-weight:400;letter-spacing:.02em;
+     background-image:
+       radial-gradient(ellipse at 20% 0%, rgba(184,146,60,.04) 0%, transparent 50%),
+       radial-gradient(ellipse at 80% 100%, rgba(10,26,46,.03) 0%, transparent 50%)}
 
 /* ── NAV ── */
-nav{background:var(--c1);height:56px;padding:0 24px;display:flex;
+nav{background:var(--c1d);height:64px;padding:0 32px;display:flex;
     align-items:center;justify-content:space-between;
-    position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
-.logo{color:#fff;font-size:17px;font-weight:800;letter-spacing:.5px}
-.logo span{color:#7DB6FF}
+    position:sticky;top:0;z-index:100;
+    border-bottom:1px solid rgba(184,146,60,.25);
+    box-shadow:0 1px 0 rgba(184,146,60,.1)}
+.logo{color:#fff;font-family:var(--latin);font-size:22px;font-weight:600;letter-spacing:8px;
+      display:flex;align-items:center;gap:14px;padding-left:2px}
+.logo::before{content:'';display:inline-block;width:22px;height:22px;
+              background:var(--seal);
+              -webkit-mask:radial-gradient(circle at 50% 50%, transparent 28%, #000 30%, #000 100%);
+              mask:radial-gradient(circle at 50% 50%, transparent 28%, #000 30%, #000 100%);
+              border-radius:2px;position:relative;
+              box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.logo span{color:#fff}
 .nav-chip{background:rgba(255,255,255,.14);color:rgba(255,255,255,.85);
            font-size:11px;padding:3px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.2)}
 
@@ -28,139 +67,379 @@ nav{background:var(--c1);height:56px;padding:0 24px;display:flex;
 .screen{display:none}.screen.active{display:block}
 
 /* ── BUTTONS ── */
-.btn{border:none;cursor:pointer;font-weight:700;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
-.btn-hero{background:#fff;color:var(--c1);padding:15px 44px;border-radius:50px;font-size:16px;box-shadow:0 4px 20px rgba(0,0,0,.15)}
-.btn-hero:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.22)}
-.btn-main{background:var(--c2);color:#fff;padding:13px 32px;border-radius:10px;font-size:15px}
-.btn-main:hover{background:var(--c1);transform:translateY(-1px)}
-.btn-main:disabled{opacity:.4;cursor:not-allowed;transform:none}
-.btn-ghost{background:none;border:1px solid var(--border);color:var(--muted);
-           padding:10px 20px;border-radius:8px;font-size:14px;font-weight:500}
-.btn-ghost:hover{border-color:var(--c2);color:var(--c2)}
+.btn{border:none;cursor:pointer;font-weight:500;transition:all .3s ease;
+     display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);letter-spacing:.05em}
+.btn-hero{background:transparent;color:#fff;padding:16px 48px;
+          border:1px solid var(--gold2);border-radius:0;font-size:14px;letter-spacing:.2em;
+          font-weight:500;position:relative;overflow:hidden}
+.btn-hero::before{content:'';position:absolute;inset:0;background:var(--gold);
+                  transform:translateY(101%);transition:transform .35s cubic-bezier(.7,0,.3,1);z-index:-1}
+.btn-hero:hover{color:var(--c1d);border-color:var(--gold)}
+.btn-hero:hover::before{transform:translateY(0)}
+.btn-hero span{position:relative;z-index:1}
+.btn-main{background:var(--c1);color:#fff;padding:14px 34px;border-radius:0;font-size:14px;
+          letter-spacing:.15em;border:1px solid var(--c1);position:relative}
+.btn-main:hover{background:transparent;color:var(--c1)}
+.btn-main:disabled{opacity:.35;cursor:not-allowed;background:var(--c1);color:#fff}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--ink);
+           padding:11px 24px;border-radius:0;font-size:13px;font-weight:400;letter-spacing:.1em}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold3);background:rgba(184,146,60,.04)}
 
 /* ── LANDING ── */
-.hero{background:linear-gradient(135deg,var(--c1) 0%,#1e5fa8 55%,var(--c2) 100%);
-      padding:72px 24px 64px;text-align:center;color:#fff}
-.hero-badge{display:inline-block;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
-            border-radius:20px;padding:5px 18px;font-size:12px;margin-bottom:24px;color:#B3D4FF}
-.hero h1{font-size:34px;font-weight:900;line-height:1.3;margin-bottom:16px}
-.hero h1 em{color:#7DB6FF;font-style:normal}
-.hero p{font-size:16px;color:rgba(255,255,255,.8);max-width:460px;margin:0 auto 36px;line-height:1.7}
-.hero-meta{display:flex;justify-content:center;gap:28px;margin-bottom:44px;flex-wrap:wrap}
-.hero-meta-item{font-size:13px;color:rgba(255,255,255,.72);display:flex;align-items:center;gap:6px}
+.hero{background:var(--c1d);padding:120px 24px 110px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;
+               background-image:
+                 radial-gradient(ellipse 60% 80% at 50% 0%, rgba(184,146,60,.12) 0%, transparent 60%),
+                 radial-gradient(ellipse 40% 50% at 20% 90%, rgba(184,146,60,.06) 0%, transparent 50%),
+                 radial-gradient(ellipse 40% 50% at 80% 110%, rgba(255,255,255,.04) 0%, transparent 50%);
+               pointer-events:none}
+.hero::after{content:'';position:absolute;left:50%;top:78px;width:1px;height:48px;
+             background:linear-gradient(to bottom, transparent, var(--gold2), transparent);
+             transform:translateX(-50%)}
+.hero > *{position:relative;z-index:1}
+.hero-badge{display:inline-flex;align-items:center;gap:10px;
+            color:var(--gold2);font-family:var(--sans);font-size:11px;font-weight:400;
+            letter-spacing:.4em;text-transform:uppercase;margin-bottom:38px;text-indent:.4em}
+.hero-badge::before,.hero-badge::after{content:'';width:32px;height:1px;background:var(--gold);opacity:.5}
+.hero h1{font-family:var(--serif);font-size:54px;font-weight:500;line-height:1.35;
+         margin-bottom:32px;letter-spacing:.06em;color:#fff}
+.hero h1 em{color:var(--gold2);font-style:normal;font-weight:600;position:relative;padding:0 8px}
+.hero p{font-size:15px;color:rgba(255,255,255,.7);max-width:520px;margin:0 auto 48px;
+        line-height:2;letter-spacing:.1em;font-weight:300}
+.hero-meta{display:flex;justify-content:center;gap:0;margin:48px auto 56px;flex-wrap:wrap;max-width:760px}
+.hero-meta-item{font-size:11px;color:rgba(255,255,255,.55);
+                padding:0 28px;letter-spacing:.18em;text-transform:uppercase;
+                border-left:1px solid rgba(184,146,60,.3);font-weight:300}
+.hero-meta-item:first-child{border-left:none}
 
-.feature-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-             gap:18px;max-width:820px;margin:48px auto;padding:0 24px}
-.feature-card{background:#fff;border-radius:var(--r);padding:26px;box-shadow:var(--sh)}
-.feature-card .icon{font-size:30px;margin-bottom:14px}
-.feature-card h3{font-size:15px;font-weight:700;color:var(--c1);margin-bottom:8px}
-.feature-card p{font-size:13px;color:var(--muted);line-height:1.65}
+.feature-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+             gap:0;max-width:1080px;margin:0 auto;padding:80px 32px;
+             border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.feature-card{background:transparent;border-radius:0;padding:32px 36px;box-shadow:none;
+              border-left:1px solid var(--border);position:relative}
+.feature-card:first-child{border-left:none}
+.feature-card .icon{font-size:24px;margin-bottom:24px;color:var(--gold);
+                    font-family:var(--latin);font-weight:500;letter-spacing:.2em;
+                    display:inline-block;padding-bottom:14px;border-bottom:1px solid var(--gold)}
+.feature-card h3{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--c1);
+                 margin-bottom:14px;letter-spacing:.05em}
+.feature-card p{font-size:13.5px;color:var(--muted);line-height:1.95;font-weight:300;letter-spacing:.03em}
 
 /* ── INFO FORM ── */
-.page-wrap{max-width:560px;margin:0 auto;padding:48px 24px}
-.page-title{font-size:22px;font-weight:800;color:var(--c1);margin-bottom:6px}
-.page-sub{font-size:14px;color:var(--muted);margin-bottom:32px;line-height:1.6}
-.form-group{margin-bottom:22px}
-.form-group label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--txt)}
+.page-wrap{max-width:560px;margin:0 auto;padding:80px 24px 100px}
+.page-title{font-family:var(--serif);font-size:34px;font-weight:500;color:var(--c1);
+            margin-bottom:14px;letter-spacing:.06em;line-height:1.4}
+.page-title::after{content:'';display:block;width:36px;height:1px;background:var(--gold);margin-top:18px}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:48px;line-height:2;letter-spacing:.05em;font-weight:300}
+.form-group{margin-bottom:28px}
+.form-group label{display:block;font-size:11px;font-weight:400;margin-bottom:10px;
+                  color:var(--muted);letter-spacing:.25em;text-transform:uppercase}
 .form-group input,.form-group select{
-  width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:10px;
-  font-size:15px;outline:none;transition:border-color .2s;background:#fff;
-  font-family:inherit;color:var(--txt)}
-.form-group input:focus,.form-group select:focus{border-color:var(--c2)}
-.form-group input::placeholder{color:#bbb}
+  width:100%;padding:14px 0;border:none;border-bottom:1px solid var(--border);border-radius:0;
+  font-size:15px;outline:none;transition:border-color .25s;background:transparent;
+  font-family:var(--sans);color:var(--ink);letter-spacing:.03em}
+.form-group input:focus,.form-group select:focus{border-bottom-color:var(--gold)}
+.form-group input::placeholder{color:#c4b89e;font-weight:300}
+.form-group textarea{
+  width:100%;display:block;box-sizing:border-box;
+  padding:12px 14px;border:1px solid var(--border);border-radius:0;
+  font-size:14px;font-family:var(--sans);background:#fff;color:var(--ink);
+  outline:none;transition:border-color .25s;
+  resize:vertical;min-height:90px;line-height:1.8;letter-spacing:.03em}
+.form-group textarea:focus{border-color:var(--gold)}
+.form-group textarea::placeholder{color:#c4b89e;font-weight:300;font-family:var(--sans)}
 
 /* ── QUIZ ── */
-.quiz-wrap{max-width:680px;margin:0 auto;padding:32px 20px}
-.prog-card{background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:22px;box-shadow:var(--sh)}
-.prog-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.prog-section{font-size:12px;font-weight:700;color:var(--c2);letter-spacing:.5px;text-transform:uppercase}
-.prog-count{font-size:12px;color:var(--muted)}
-.prog-bar{height:6px;background:var(--c3);border-radius:3px;overflow:hidden}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--c2),var(--c1));
-           border-radius:3px;transition:width .45s cubic-bezier(.4,0,.2,1)}
+.quiz-wrap{max-width:720px;margin:0 auto;padding:48px 24px 80px}
+.prog-card{background:transparent;border:none;border-radius:0;padding:0 0 28px;
+           margin-bottom:36px;box-shadow:none;border-bottom:1px solid var(--border)}
+.prog-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.prog-section{font-family:var(--serif);font-size:14px;font-weight:600;color:var(--c1);
+              letter-spacing:.3em;text-transform:none}
+.prog-count{font-family:var(--latin);font-size:13px;color:var(--muted);letter-spacing:.15em}
+.prog-bar{height:1px;background:var(--border);border-radius:0;overflow:visible;position:relative}
+.prog-fill{height:1px;background:var(--gold);border-radius:0;
+           transition:width .6s cubic-bezier(.4,0,.2,1);position:relative}
+.prog-fill::after{content:'';position:absolute;right:-3px;top:-2px;width:5px;height:5px;
+                  background:var(--gold);border-radius:50%}
 
-.q-card{background:#fff;border-radius:var(--r);padding:30px;box-shadow:var(--sh);margin-bottom:16px}
-.q-tag{font-size:11px;font-weight:700;color:var(--c2);letter-spacing:.5px;
-       text-transform:uppercase;margin-bottom:14px}
-.q-text{font-size:18px;font-weight:700;color:var(--txt);line-height:1.55;
-        margin-bottom:26px;white-space:pre-line}
-.opts{display:flex;flex-direction:column;gap:10px}
-.opt{padding:14px 18px;border:2px solid var(--border);border-radius:10px;
-     cursor:pointer;font-size:15px;color:var(--txt);transition:all .18s;
-     display:flex;align-items:flex-start;gap:14px;line-height:1.5;text-align:left}
-.opt:hover{border-color:var(--c2);background:var(--c3)}
-.opt.sel{border-color:var(--c2);background:var(--c3);color:var(--c1);font-weight:600}
-.opt-dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);
-         flex-shrink:0;margin-top:2px;transition:all .18s;display:flex;
-         align-items:center;justify-content:center}
-.opt.sel .opt-dot{background:var(--c2);border-color:var(--c2)}
-.opt.sel .opt-dot::after{content:'';width:8px;height:8px;background:#fff;border-radius:50%;display:block}
-.quiz-nav{display:flex;justify-content:space-between;align-items:center}
+.q-card{background:transparent;border-radius:0;padding:24px 0;box-shadow:none;margin-bottom:24px}
+.q-tag{font-family:var(--latin);font-size:13px;font-weight:500;color:var(--gold);
+       letter-spacing:.3em;text-transform:uppercase;margin-bottom:24px}
+.q-text{font-family:var(--serif);font-size:24px;font-weight:500;color:var(--c1);line-height:1.7;
+        margin-bottom:40px;white-space:pre-line;letter-spacing:.04em}
+.opts{display:flex;flex-direction:column;gap:0}
+.opt{padding:20px 24px;border:none;border-bottom:1px solid var(--border);border-radius:0;
+     cursor:pointer;font-size:14.5px;color:var(--ink);transition:all .25s;
+     display:flex;align-items:flex-start;gap:18px;line-height:1.7;text-align:left;
+     letter-spacing:.03em;font-weight:300}
+.opt:first-child{border-top:1px solid var(--border)}
+.opt:hover{background:rgba(184,146,60,.04);padding-left:32px}
+.opt.sel{background:rgba(184,146,60,.06);color:var(--c1);font-weight:400;border-bottom-color:var(--gold)}
+.opt-dot{width:14px;height:14px;border-radius:0;border:1px solid var(--border);
+         flex-shrink:0;margin-top:6px;transition:all .25s;display:flex;
+         align-items:center;justify-content:center;background:transparent}
+.opt.sel .opt-dot{background:var(--gold);border-color:var(--gold)}
+.opt.sel .opt-dot::after{content:'';width:4px;height:4px;background:#fff;display:block}
+.quiz-nav{display:flex;justify-content:space-between;align-items:center;padding-top:32px}
 
 /* ── RESULT ── */
-.res-hero{background:linear-gradient(135deg,var(--c1),var(--c2));
-          padding:52px 24px 44px;text-align:center;color:#fff}
-.res-label{font-size:11px;color:rgba(255,255,255,.6);letter-spacing:1px;
-           text-transform:uppercase;margin-bottom:6px}
-.res-username{font-size:22px;font-weight:800;margin-bottom:24px}
-.score-ring{width:130px;height:130px;border-radius:50%;
-            border:6px solid rgba(255,255,255,.22);display:flex;
+.res-hero{background:var(--c1d);padding:90px 24px 80px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.res-hero::before{content:'';position:absolute;inset:0;
+                  background-image:radial-gradient(ellipse 50% 60% at 50% 0%, rgba(184,146,60,.1) 0%, transparent 60%)}
+.res-hero > *{position:relative;z-index:1}
+.res-label{font-family:var(--latin);font-size:11px;color:var(--gold2);letter-spacing:.5em;
+           text-transform:uppercase;margin-bottom:20px;font-weight:500}
+.res-username{font-family:var(--serif);font-size:28px;font-weight:500;margin-bottom:48px;
+              letter-spacing:.08em;color:#fff}
+.score-ring{width:180px;height:180px;border-radius:50%;
+            border:1px solid var(--gold);display:flex;
             flex-direction:column;align-items:center;justify-content:center;
-            margin:0 auto 18px;background:rgba(255,255,255,.08)}
-.score-num{font-size:42px;font-weight:900;line-height:1}
-.score-unit{font-size:13px;color:rgba(255,255,255,.65);margin-top:2px}
-.level-pill{display:inline-block;border-radius:20px;padding:6px 22px;
-            font-size:14px;font-weight:700;border:1.5px solid rgba(255,255,255,.4);
-            background:rgba(255,255,255,.15)}
+            margin:0 auto 32px;background:transparent;position:relative}
+.score-ring::before{content:'';position:absolute;inset:8px;border:1px solid rgba(184,146,60,.3);border-radius:50%}
+.score-num{font-family:var(--latin);font-size:72px;font-weight:500;line-height:1;color:#fff}
+.score-unit{font-family:var(--latin);font-size:11px;color:rgba(255,255,255,.5);
+            margin-top:8px;letter-spacing:.3em}
+.level-pill{display:inline-block;border-radius:0;padding:10px 32px;
+            font-family:var(--serif);font-size:15px;font-weight:500;
+            border:1px solid rgba(184,146,60,.4);
+            background:transparent;color:var(--gold2);letter-spacing:.2em}
 
-.res-body{max-width:740px;margin:0 auto;padding:36px 20px}
-.sec-title{font-size:13px;font-weight:700;color:var(--c1);text-transform:uppercase;
-           letter-spacing:.6px;border-bottom:2px solid var(--c3);
-           padding-bottom:8px;margin-bottom:18px}
+.res-body{max-width:880px;margin:0 auto;padding:80px 32px}
+.sec-title{font-family:var(--serif);font-size:12px;font-weight:500;color:var(--c1);
+           letter-spacing:.5em;padding-bottom:0;margin:64px 0 32px;
+           display:flex;align-items:center;gap:24px;justify-content:center;text-align:center}
+.sec-title::before,.sec-title::after{content:'';flex:1;height:1px;background:var(--border);max-width:180px}
 
 /* Dim bars */
-.dim-list{display:flex;flex-direction:column;gap:12px;margin-bottom:36px}
-.dim-row{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:var(--sh)}
-.dim-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.dim-name{font-size:14px;font-weight:600}
-.dim-pct{font-size:13px;font-weight:700}
-.dim-bar{height:8px;background:var(--c3);border-radius:4px;overflow:hidden}
-.dim-fill{height:100%;border-radius:4px;transition:width 1.1s cubic-bezier(.4,0,.2,1) .3s}
+.dim-list{display:flex;flex-direction:column;gap:0;margin-bottom:64px;
+          border-top:1px solid var(--border)}
+.dim-row{background:transparent;border-radius:0;padding:22px 8px;box-shadow:none;
+         border-bottom:1px solid var(--border)}
+.dim-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+.dim-name{font-family:var(--serif);font-size:16px;font-weight:500;color:var(--c1);letter-spacing:.05em}
+.dim-pct{font-family:var(--latin);font-size:18px;font-weight:500;letter-spacing:.05em}
+.dim-bar{height:1px;background:var(--border);border-radius:0;overflow:hidden}
+.dim-fill{height:1px;border-radius:0;transition:width 1.3s cubic-bezier(.4,0,.2,1) .3s;background:var(--gold)!important}
 
 /* Analysis */
-.analysis-box{background:#fff;border-radius:var(--r);padding:24px 26px;
-              box-shadow:var(--sh);margin-bottom:36px;
-              border-left:4px solid var(--c2)}
-.analysis-box h3{font-size:16px;font-weight:700;color:var(--c1);margin-bottom:10px}
-.analysis-box p{font-size:14px;line-height:1.85;color:var(--txt)}
+.analysis-box{background:var(--c3);border-radius:0;padding:40px 48px;
+              box-shadow:none;margin-bottom:64px;
+              border:none;border-left:1px solid var(--gold);position:relative}
+.analysis-box::before{content:'「';position:absolute;left:18px;top:14px;
+                      font-family:var(--serif);font-size:48px;color:var(--gold);
+                      line-height:1;opacity:.4}
+.analysis-box h3{font-family:var(--serif);font-size:22px;font-weight:500;color:var(--c1);
+                 margin-bottom:18px;letter-spacing:.06em}
+.analysis-box p{font-family:var(--sans);font-size:14px;line-height:2.1;color:var(--ink);
+                letter-spacing:.03em;font-weight:300}
 
 /* Plan cards */
-.plans-grid{display:flex;flex-direction:column;gap:14px;margin-bottom:36px}
-.plan-card{border-radius:var(--r);padding:24px;box-shadow:var(--sh)}
-.plan-card.rec{border:2px solid var(--or);background:#fff}
-.plan-card.other{background:var(--c4);border:1px solid var(--border)}
-.rec-badge{display:inline-block;background:var(--or);color:#fff;
-           font-size:11px;font-weight:700;padding:3px 12px;
-           border-radius:10px;margin-bottom:12px}
-.plan-name{font-size:17px;font-weight:800;color:var(--c1);margin-bottom:4px}
-.plan-price{font-size:30px;font-weight:900;color:var(--or);line-height:1.1;margin-bottom:4px}
-.plan-price small{font-size:14px;font-weight:400;color:var(--muted)}
-.plan-dur{font-size:12px;color:var(--muted);margin-bottom:10px}
-.plan-desc{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.65}
-.plan-feats{display:flex;flex-direction:column;gap:6px}
-.plan-feat{font-size:13px;color:var(--txt);display:flex;gap:8px}
-.plan-feat::before{content:'✓';color:var(--gr);font-weight:700;flex-shrink:0}
+.plans-grid{display:flex;flex-direction:column;gap:0;margin-bottom:36px}
+.plan-card{border-radius:0;padding:40px 44px;box-shadow:none;
+           border:1px solid var(--border);border-top:none;background:#fff;position:relative}
+.plan-card:first-child{border-top:1px solid var(--border)}
+.plan-card.rec{border:1px solid var(--gold);background:#fff;
+               box-shadow:0 4px 24px rgba(184,146,60,.08)}
+.plan-card.other{background:transparent}
+.rec-badge{display:inline-block;background:transparent;color:var(--gold);
+           font-family:var(--latin);font-size:11px;font-weight:500;padding:0;
+           border:none;border-bottom:1px solid var(--gold);padding-bottom:4px;
+           border-radius:0;margin-bottom:18px;letter-spacing:.35em;text-transform:uppercase}
+.plan-name{font-family:var(--serif);font-size:22px;font-weight:500;color:var(--c1);
+           margin-bottom:8px;letter-spacing:.06em}
+.plan-price{font-family:var(--latin);font-size:42px;font-weight:500;color:var(--c1);
+            line-height:1.1;margin-bottom:6px;letter-spacing:.02em}
+.plan-price small{font-family:var(--sans);font-size:12px;font-weight:300;color:var(--muted);
+                  letter-spacing:.2em;margin-left:4px}
+.plan-dur{font-family:var(--latin);font-size:11px;color:var(--gold);margin-bottom:18px;
+          letter-spacing:.3em;text-transform:uppercase}
+.plan-desc{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.95;
+           font-weight:300;letter-spacing:.04em;padding-bottom:22px;border-bottom:1px solid var(--border)}
+.plan-feats{display:flex;flex-direction:column;gap:10px}
+.plan-feat{font-size:13px;color:var(--ink);display:flex;gap:14px;line-height:1.6;
+           font-weight:300;letter-spacing:.03em}
+.plan-feat::before{content:'—';color:var(--gold);font-weight:500;flex-shrink:0}
 
 /* CTA */
-.cta-area{text-align:center;padding:32px 0 48px}
-.cta-area p{font-size:13px;color:var(--muted);margin-top:14px}
-.cta-area a{color:var(--c2);text-decoration:none;font-weight:600}
-.cta-area a:hover{text-decoration:underline}
+.cta-area{text-align:center;padding:64px 0 80px}
+.cta-area p{font-size:11px;color:var(--muted);margin-top:24px;letter-spacing:.2em}
+.cta-area a{color:var(--gold);text-decoration:none;font-weight:500;
+            border-bottom:1px solid var(--gold);padding-bottom:2px}
+.cta-area a:hover{color:var(--c1);border-color:var(--c1)}
+.cta-area .btn-main{padding:18px 56px!important;font-size:13px!important;letter-spacing:.3em!important}
 
 /* ── FOOTER ── */
-footer{background:var(--c1);color:rgba(255,255,255,.5);text-align:center;
-       padding:20px;font-size:12px;margin-top:0}
-footer span{color:rgba(255,255,255,.8)}
+footer{background:var(--c1d);color:rgba(255,255,255,.4);text-align:center;
+       padding:48px 24px;font-size:11px;margin-top:0;
+       letter-spacing:.3em;border-top:1px solid rgba(184,146,60,.15);font-weight:300}
+footer span{color:var(--gold2);font-family:var(--latin);font-weight:500;letter-spacing:.5em;font-size:14px;display:block;margin-bottom:12px}
+
+/* ── NAV LINKS ── */
+.nav-links{display:flex;gap:0;align-items:center;height:100%}
+.nav-link{color:rgba(255,255,255,.6);font-size:12px;padding:0 22px;border-radius:0;
+          cursor:pointer;transition:all .25s;font-weight:300;letter-spacing:.25em;
+          height:100%;display:flex;align-items:center;position:relative}
+.nav-link:hover{color:#fff}
+.nav-link.active{color:var(--gold2)}
+.nav-link.active::after{content:'';position:absolute;bottom:-1px;left:50%;
+                        transform:translateX(-50%);width:24px;height:1px;background:var(--gold2)}
+.nav-chip{font-family:var(--latin);font-size:11px;font-weight:500;letter-spacing:.25em;
+          background:transparent!important;border:1px solid rgba(184,146,60,.4)!important;
+          color:var(--gold2)!important;padding:7px 18px!important;border-radius:0!important}
+
+/* ── SPRITE (网站精灵) ── */
+.sprite-fab{position:fixed;right:20px;bottom:22px;width:60px;height:60px;border-radius:50%;
+            background:linear-gradient(135deg,var(--c2),var(--pu));color:#fff;
+            display:flex;align-items:center;justify-content:center;font-size:28px;
+            box-shadow:0 6px 24px rgba(108,58,191,.4);cursor:grab;z-index:200;
+            transition:transform .15s, box-shadow .2s;border:none;user-select:none;touch-action:none}
+.sprite-fab:hover{transform:scale(1.08) rotate(-6deg)}
+.sprite-fab.dragging{cursor:grabbing;transform:scale(1.12);box-shadow:0 12px 32px rgba(108,58,191,.5);transition:none}
+.sprite-fab::after{content:'';position:absolute;top:6px;right:6px;width:10px;height:10px;
+                   border-radius:50%;background:var(--or);box-shadow:0 0 0 3px #fff;
+                   animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.5}}
+
+.sprite-panel{position:fixed;right:20px;bottom:92px;width:360px;height:520px;
+              background:#fff;border-radius:18px;box-shadow:0 12px 48px rgba(18,58,107,.25);
+              display:none;flex-direction:column;z-index:201;overflow:hidden;
+              animation:slideUp .3s cubic-bezier(.4,0,.2,1)}
+.sprite-panel.open{display:flex}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.sprite-head{background:linear-gradient(135deg,var(--c2),var(--pu));color:#fff;padding:16px 18px;
+             display:flex;align-items:center;gap:12px;cursor:grab;user-select:none;touch-action:none}
+.sprite-head.dragging{cursor:grabbing}
+.sprite-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);
+               display:flex;align-items:center;justify-content:center;font-size:20px}
+.sprite-meta{flex:1}
+.sprite-meta h4{font-size:15px;font-weight:700;margin-bottom:2px}
+.sprite-meta p{font-size:11px;opacity:.85}
+.sprite-close{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;
+              opacity:.7;padding:0 4px}
+.sprite-close:hover{opacity:1}
+
+.sprite-body{flex:1;overflow-y:auto;padding:16px;background:var(--c4)}
+.msg{margin-bottom:14px;display:flex;gap:8px;animation:fadeIn .25s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg.bot .msg-bubble{background:#fff;color:var(--txt);border-bottom-left-radius:4px}
+.msg.user{flex-direction:row-reverse}
+.msg.user .msg-bubble{background:var(--c2);color:#fff;border-bottom-right-radius:4px}
+.msg-bubble{max-width:78%;padding:10px 14px;border-radius:14px;font-size:13.5px;
+            line-height:1.55;box-shadow:0 1px 4px rgba(0,0,0,.04);white-space:pre-wrap}
+
+.sprite-suggests{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px 0;background:var(--c4)}
+.sug-chip{background:#fff;border:1px solid var(--border);color:var(--c2);
+          font-size:12px;padding:6px 12px;border-radius:14px;cursor:pointer;
+          transition:all .18s}
+.sug-chip:hover{background:var(--c3);border-color:var(--c2)}
+
+.sprite-input{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--border);background:#fff}
+.sprite-input input{flex:1;border:1.5px solid var(--border);border-radius:20px;
+                    padding:9px 16px;font-size:13.5px;outline:none;font-family:inherit}
+.sprite-input input:focus{border-color:var(--c2)}
+.sprite-input button{background:var(--c2);color:#fff;border:none;border-radius:20px;
+                     padding:0 18px;font-size:14px;cursor:pointer;font-weight:600}
+.sprite-input button:hover{background:var(--c1)}
+
+/* ── CHECK-IN (打卡) ── */
+.checkin-cal{background:#fff;border-radius:0;padding:32px;box-shadow:none;margin-bottom:28px;
+             border:1px solid var(--border)}
+.cal-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:22px;
+          padding-bottom:18px;border-bottom:1px solid var(--border)}
+.cal-title{font-family:var(--serif);font-size:18px;font-weight:500;color:var(--c1);letter-spacing:.08em}
+.cal-streak{font-family:var(--latin);font-size:14px;color:var(--gold);letter-spacing:.15em;font-weight:500}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-day-label{font-size:11px;color:var(--muted);text-align:center;padding:4px 0}
+.cal-day{aspect-ratio:1;border-radius:0;background:transparent;display:flex;
+         align-items:center;justify-content:center;font-family:var(--latin);font-size:13px;
+         color:var(--muted);border:1px solid var(--border);position:relative;font-weight:400}
+.cal-day.has{background:var(--c1);color:var(--gold2);font-weight:500;border-color:var(--c1)}
+.cal-day.today{border-color:var(--gold);font-weight:500;color:var(--gold)}
+.cal-day.empty{visibility:hidden}
+
+.checkin-form{background:#fff;border-radius:0;padding:36px;box-shadow:none;margin-bottom:28px;
+              border:1px solid var(--border)}
+.checkin-form h3{font-family:var(--serif);font-size:18px;font-weight:500;color:var(--c1);
+                 margin-bottom:24px;letter-spacing:.06em;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.checkin-form textarea{width:100%;border:none;border-bottom:1px solid var(--border);border-radius:0;
+                       padding:8px 0;font-size:14px;font-family:var(--sans);background:transparent;
+                       resize:vertical;min-height:60px;outline:none;letter-spacing:.03em;line-height:1.8}
+.checkin-form textarea:focus{border-bottom-color:var(--gold)}
+
+.checkin-history{background:#fff;border-radius:0;padding:32px;box-shadow:none;border:1px solid var(--border)}
+.checkin-item{padding:18px 0;border-bottom:1px solid var(--border)}
+.checkin-item:last-child{border:none}
+.checkin-date{font-family:var(--latin);font-size:12px;color:var(--gold);font-weight:500;
+              margin-bottom:8px;letter-spacing:.2em}
+.checkin-text{font-size:13.5px;color:var(--ink);line-height:1.85;font-weight:300;letter-spacing:.03em}
+.checkin-tags{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.checkin-tag{background:transparent;color:var(--gold3);font-family:var(--latin);font-size:11px;
+             padding:2px 10px;border:1px solid var(--border);border-radius:0;letter-spacing:.15em}
+
+/* ── REVIEW (复盘) ── */
+.rev-card{background:#fff;border-radius:0;padding:40px;box-shadow:none;margin-bottom:24px;border:1px solid var(--border)}
+.rev-card h3{font-family:var(--serif);font-size:20px;font-weight:500;color:var(--c1);
+             margin-bottom:24px;letter-spacing:.06em;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.rev-compare{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:24px;
+             border:1px solid var(--border)}
+.rev-col{background:transparent;border-radius:0;padding:32px 20px;text-align:center;
+         border-right:1px solid var(--border)}
+.rev-col:last-child{border-right:none}
+.rev-col-label{font-family:var(--latin);font-size:11px;color:var(--muted);margin-bottom:14px;letter-spacing:.25em;text-transform:uppercase}
+.rev-col-score{font-family:var(--latin);font-size:54px;font-weight:500;color:var(--c1);line-height:1}
+.rev-col-date{font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:.15em}
+.rev-delta{text-align:center;font-family:var(--serif);font-size:15px;font-weight:500;
+           padding:18px;border-radius:0;margin-bottom:18px;letter-spacing:.15em}
+.rev-delta.up{background:transparent;color:var(--gr);border:1px solid var(--gr)}
+.rev-delta.down{background:transparent;color:var(--re);border:1px solid var(--re)}
+.rev-empty{text-align:center;padding:48px 20px;color:var(--muted);font-size:13px;
+           letter-spacing:.1em;font-weight:300;line-height:1.9}
+
+/* ── MODAL ── */
+.modal-mask{position:fixed;inset:0;background:rgba(10,17,31,.7);display:none;
+            align-items:center;justify-content:center;z-index:300;padding:20px;
+            backdrop-filter:blur(4px)}
+.modal-mask.open{display:flex}
+.modal-box{background:#fff;border-radius:0;padding:48px;max-width:440px;width:100%;
+           text-align:center;box-shadow:var(--sh2);position:relative;animation:slideUp .3s;
+           border:1px solid var(--gold)}
+.modal-close{position:absolute;top:14px;right:18px;background:none;border:none;
+             font-size:24px;cursor:pointer;color:var(--muted);font-family:var(--serif);font-weight:300}
+.modal-close:hover{color:var(--c1)}
+.modal-qr{width:200px;height:200px;margin:28px auto;background:var(--c4);
+          border:1px solid var(--border);border-radius:0;display:flex;
+          align-items:center;justify-content:center;color:var(--muted);font-size:12px;
+          letter-spacing:.15em;font-weight:300;line-height:1.8}
+.modal-box h3{font-family:var(--serif);font-size:22px;font-weight:500;color:var(--c1);
+              margin-bottom:8px;letter-spacing:.1em}
+.modal-box h3::after{content:'';display:block;width:32px;height:1px;background:var(--gold);margin:14px auto 0}
+.modal-box p{font-size:13px;color:var(--muted);line-height:1.95;letter-spacing:.05em;font-weight:300}
+
+/* ── GATE (注册门禁页 / 限额提示) ── */
+.gate-wrap{max-width:480px;margin:0 auto;padding:60px 24px;text-align:center}
+.gate-icon{font-size:54px;margin-bottom:18px;color:var(--gold)}
+.gate-title{font-size:22px;font-weight:800;color:var(--c1);margin-bottom:10px}
+.gate-sub{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:28px}
+.gate-perks{background:#fff;border-radius:var(--r);padding:20px 24px;box-shadow:var(--sh);
+            margin-bottom:24px;text-align:left}
+.gate-perks h4{font-size:13px;color:var(--c1);font-weight:700;margin-bottom:10px}
+.gate-perk{font-size:13px;color:var(--txt);padding:5px 0;display:flex;gap:8px;line-height:1.55}
+.gate-perk::before{content:'✓';color:var(--gr);font-weight:700;flex-shrink:0}
+
+.acct-chip{background:rgba(201,161,74,.15);color:var(--gold);
+           font-size:11px;padding:3px 10px;border-radius:10px;border:1px solid rgba(201,161,74,.3);
+           font-weight:600;margin-left:6px}
+
+/* ── SHARE BAR ── */
+.share-bar{display:flex;gap:0;justify-content:center;margin:32px 0 0;
+           border-top:1px solid var(--border);padding-top:32px}
+.share-btn{background:transparent;border:none;border-right:1px solid var(--border);color:var(--ink);
+           padding:14px 36px;border-radius:0;font-size:12px;font-weight:400;
+           cursor:pointer;transition:all .25s;letter-spacing:.25em;font-family:var(--sans)}
+.share-btn:last-child{border-right:none}
+.share-btn:hover{background:var(--c1);color:#fff}
 
 /* ── RESPONSIVE ── */
 @media(max-width:600px){
@@ -168,6 +447,9 @@ footer span{color:rgba(255,255,255,.8)}
   .q-text{font-size:16px}
   .hero-meta{gap:16px}
   .score-num{font-size:34px}
+  .nav-links{display:none}
+  .sprite-panel{width:calc(100% - 24px);right:12px;bottom:88px;height:75vh}
+  .rev-compare{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -175,61 +457,69 @@ footer span{color:rgba(255,255,255,.8)}
 
 <!-- NAV -->
 <nav>
-  <div class="logo">AI<span>Coach</span> · 实战陪跑</div>
-  <div class="nav-chip">摸底测评 Beta</div>
+  <div class="logo" style="cursor:pointer" onclick="goto('home')"><span>ATLAS</span></div>
+  <div class="nav-links">
+    <div class="nav-link" id="nav-home" onclick="goto('home')">首页</div>
+    <div class="nav-link" id="nav-checkin" onclick="goto('checkin')">每日打卡</div>
+    <div class="nav-link" id="nav-review" onclick="goto('review')">每周复盘</div>
+    <div class="nav-chip" id="nav-account" style="margin-left:8px;cursor:pointer" onclick="onAccountChip()">未登录</div>
+  </div>
 </nav>
 
 <!-- ════════════════════ SCREEN: 首页 ════════════════════ -->
 <div id="s-home" class="screen active">
   <div class="hero">
-    <div class="hero-badge">🎯 专为AI实战陪跑设计 · 2026最新版</div>
-    <h1>测测你的AI能力<br>现在在<em>哪个段位</em>？</h1>
-    <p>15道题，5个维度，帮你精准定位当下的AI水平，<br>生成你的专属能力报告和提升路径。</p>
+    <div class="hero-badge">ATLAS · 行业专家与企业决策者私享</div>
+    <h1>你的 AI 战力<br>站在<em>哪个段位</em></h1>
+    <p>为行业专家与企业老板提供的私享 AI 战力评估<br>二十题精准定位,生成专属跃迁路径报告</p>
     <div class="hero-meta">
-      <div class="hero-meta-item">⏱ 约5-8分钟</div>
-      <div class="hero-meta-item">📊 5维度立体评估</div>
-      <div class="hero-meta-item">🎁 专属报告免费</div>
-      <div class="hero-meta-item">🔒 数据不外传</div>
+      <div class="hero-meta-item">八至十二分钟</div>
+      <div class="hero-meta-item">五维战力扫描</div>
+      <div class="hero-meta-item">月度题库更新</div>
+      <div class="hero-meta-item">全程保密</div>
     </div>
-    <button class="btn btn-hero" onclick="goto('info')">立即开始测评 →</button>
+    <button class="btn btn-hero" onclick="goto('info')"><span>开始能力评估</span></button>
+    <p style="font-size:11px;color:rgba(255,255,255,.4);margin-top:24px;letter-spacing:.2em">
+      免费体验一次 · 注册后每周可重测
+    </p>
   </div>
 
   <div class="feature-row">
     <div class="feature-card">
-      <div class="icon">🔍</div>
-      <h3>知道你在哪里</h3>
-      <p>工具认知、提示词、内容创作、自动化思维、工作流整合——5个维度全面扫描，不再凭感觉。</p>
+      <div class="icon">I</div>
+      <h3>精准定位</h3>
+      <p>工具认知、提示词、内容创作、自动化思维、工作流整合——五维战力扫描,告别凭感觉。</p>
     </div>
     <div class="feature-card">
-      <div class="icon">🗺️</div>
-      <h3>知道差距在哪里</h3>
-      <p>对比「驾驭者」标准，精准找出你最薄弱的环节，知道下一步该突破什么。</p>
+      <div class="icon">II</div>
+      <h3>对标顶端</h3>
+      <p>与行业 AI 战力宗师段位对照,锁定你的核心瓶颈,看清下一阶段的破局点。</p>
     </div>
     <div class="feature-card">
-      <div class="icon">🚀</div>
-      <h3>知道怎么提升</h3>
-      <p>基于评分推荐最匹配的陪跑方案，6周完成从「会用AI」到「驾驭AI」的真实跃升。</p>
+      <div class="icon">III</div>
+      <h3>私享陪跑</h3>
+      <p>专家与高管的 1v1 定制路径,6-8 周从「使用 AI」到「驾驭 AI 重塑业务」。</p>
     </div>
   </div>
 
-  <div style="text-align:center;padding:0 24px 60px">
-    <div style="display:inline-flex;gap:32px;background:#fff;border-radius:var(--r);
-                padding:20px 40px;box-shadow:var(--sh);flex-wrap:wrap;justify-content:center">
-      <div style="text-align:center">
-        <div style="font-size:28px;font-weight:900;color:var(--c1)">5</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">能力维度</div>
+  <div style="text-align:center;padding:80px 24px 100px">
+    <div style="font-family:var(--serif);font-size:12px;color:var(--muted);letter-spacing:.5em;text-transform:uppercase;margin-bottom:48px">— 数 字 — </div>
+    <div style="display:inline-flex;gap:0;flex-wrap:wrap;justify-content:center;max-width:900px">
+      <div style="text-align:center;padding:0 56px;border-left:1px solid var(--border)">
+        <div style="font-family:var(--latin);font-size:64px;font-weight:500;color:var(--c1);line-height:1">5</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:.4em">能 力 维 度</div>
       </div>
-      <div style="text-align:center">
-        <div style="font-size:28px;font-weight:900;color:var(--c2)">15</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">测评题目</div>
+      <div style="text-align:center;padding:0 56px;border-left:1px solid var(--border)">
+        <div style="font-family:var(--latin);font-size:64px;font-weight:500;color:var(--c1);line-height:1">20</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:.4em">诊 断 题 目</div>
       </div>
-      <div style="text-align:center">
-        <div style="font-size:28px;font-weight:900;color:var(--gr)">5</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">能力段位</div>
+      <div style="text-align:center;padding:0 56px;border-left:1px solid var(--border)">
+        <div style="font-family:var(--latin);font-size:64px;font-weight:500;color:var(--c1);line-height:1">5</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:.4em">战 力 段 位</div>
       </div>
-      <div style="text-align:center">
-        <div style="font-size:28px;font-weight:900;color:var(--or)">1</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">专属报告</div>
+      <div style="text-align:center;padding:0 56px;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+        <div style="font-family:var(--latin);font-size:64px;font-weight:500;color:var(--gold);line-height:1">I</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:.4em">私 享 报 告</div>
       </div>
     </div>
   </div>
@@ -238,36 +528,41 @@ footer span{color:rgba(255,255,255,.8)}
 <!-- ════════════════════ SCREEN: 信息收集 ════════════════════ -->
 <div id="s-info" class="screen">
   <div class="page-wrap">
-    <div class="page-title">先来认识一下你 👋</div>
-    <div class="page-sub">填写基本信息，让报告更精准——仅用于生成个性化分析，不会被其他用途使用。</div>
+    <div class="page-title">先了解你的角色 ⚜</div>
+    <div class="page-sub">填写身份信息以匹配 ATLAS 路径——仅用于生成个性化诊断,严格保密。</div>
 
     <div class="form-group">
       <label>你的称呼 *</label>
-      <input type="text" id="f-name" placeholder="例如：素珍" maxlength="20"/>
+      <input type="text" id="f-name" placeholder="例如:王总 / 李教授" maxlength="20"/>
     </div>
     <div class="form-group">
-      <label>职业 / 行业 *</label>
+      <label>身份 / 行业 *</label>
       <select id="f-industry">
-        <option value="">请选择你的行业</option>
-        <option value="medical">医疗 / 护理 / 医学</option>
-        <option value="education">教育 / 培训</option>
-        <option value="business">商业 / 运营 / 市场营销</option>
-        <option value="tech">技术 / IT / 产品</option>
-        <option value="creative">设计 / 创意 / 媒体</option>
-        <option value="research">科研 / 学术 / 研究</option>
-        <option value="freelance">自由职业 / 个人IP</option>
+        <option value="">请选择你的身份</option>
+        <option value="ceo">企业创始人 / CEO / 高管</option>
+        <option value="medical">医疗专家(医生 / 主任 / 医院管理者)</option>
+        <option value="finance">金融 / 法律 / 咨询专家</option>
+        <option value="education">教育专家 / 高校学者</option>
+        <option value="research">科研 / 学术带头人</option>
+        <option value="manufacturing">制造业 / 实业经营者</option>
+        <option value="business">商业 / 品牌 / 营销负责人</option>
+        <option value="tech">科技 / IT 创始人或高管</option>
+        <option value="creative">文创 / 媒体 / 设计主理人</option>
+        <option value="freelance">独立专家 / 个人 IP</option>
         <option value="other">其他</option>
       </select>
     </div>
     <div class="form-group">
-      <label>你最想用AI解决哪类问题？*</label>
+      <label>你最希望 AI 帮你解决什么?*</label>
       <select id="f-goal">
-        <option value="">请选择你的主要目标</option>
-        <option value="content">内容创作（文章 / 视频 / 图片）</option>
-        <option value="research">科研加速（文献 / 课题 / 报告）</option>
-        <option value="workflow">工作流自动化（减少重复工作）</option>
-        <option value="ip">个人IP打造与变现</option>
-        <option value="all">全部都想要</option>
+        <option value="">请选择核心诉求</option>
+        <option value="strategy">业务战略与决策辅助</option>
+        <option value="efficiency">团队效率与流程自动化</option>
+        <option value="content">行业内容输出与个人影响力</option>
+        <option value="research">专业研究与课题加速</option>
+        <option value="ip">个人 IP 打造与高端变现</option>
+        <option value="org">组织 AI 化转型与赋能</option>
+        <option value="all">全方位升级</option>
       </select>
     </div>
     <div style="margin-top:28px">
@@ -286,9 +581,12 @@ footer span{color:rgba(255,255,255,.8)}
     <div class="prog-card">
       <div class="prog-top">
         <div class="prog-section" id="prog-sec">工具认知</div>
-        <div class="prog-count" id="prog-cnt">1 / 15</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="prog-count" id="prog-cnt">1 / 20</div>
+          <div id="prog-ver" style="font-family:var(--latin);font-size:11px;color:var(--gold3);font-weight:500;letter-spacing:.15em">EDITION —</div>
+        </div>
       </div>
-      <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:6.7%"></div></div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:5%"></div></div>
     </div>
 
     <div class="q-card">
@@ -307,8 +605,8 @@ footer span{color:rgba(255,255,255,.8)}
 <!-- ════════════════════ SCREEN: 测评结果 ════════════════════ -->
 <div id="s-result" class="screen">
   <div class="res-hero">
-    <div class="res-label">你的AI能力测评报告</div>
-    <div class="res-username" id="res-name">— 的专属报告</div>
+    <div class="res-label">ATLAS · 私享诊断报告 · <span id="res-ver">题库 v—</span></div>
+    <div class="res-username" id="res-name">— 的私享报告</div>
     <div class="score-ring">
       <div class="score-num" id="res-score">0</div>
       <div class="score-unit">/ 100 分</div>
@@ -317,7 +615,7 @@ footer span{color:rgba(255,255,255,.8)}
   </div>
 
   <div class="res-body">
-    <div class="sec-title">五维能力分析</div>
+    <div class="sec-title">五维战力分析</div>
     <div class="dim-list" id="dim-list"></div>
 
     <div class="sec-title">专属诊断</div>
@@ -326,23 +624,168 @@ footer span{color:rgba(255,255,255,.8)}
       <p id="ana-text">—</p>
     </div>
 
-    <div class="sec-title">推荐陪跑方案</div>
+    <div class="sec-title">私享陪跑方案</div>
     <div class="plans-grid" id="plans-grid"></div>
 
+    <div class="share-bar">
+      <button class="share-btn" onclick="exportReport()">📷 导出诊断长图</button>
+      <button class="share-btn" onclick="goto('checkin')">📝 启动战力日志</button>
+    </div>
+
     <div class="cta-area">
-      <button class="btn btn-main" style="padding:15px 52px;font-size:16px;border-radius:50px"
-              onclick="alert('请联系 AI Coach 获取专属方案！')">
-        我要开始陪跑 🚀
+      <button class="btn btn-main" onclick="openContact()">
+        申请 ATLAS 私享席位
       </button>
-      <p>想重新测一次？<a href="#" onclick="resetAll();return false">点击这里</a></p>
+      <p>想重新评估?<a href="#" onclick="resetAll();return false">点击这里</a></p>
     </div>
   </div>
 </div>
 
+<!-- ════════════════════ SCREEN: 打卡 ════════════════════ -->
+<div id="s-checkin" class="screen">
+  <div class="page-wrap" style="max-width:680px">
+    <div class="page-title">📝 每日战力日志</div>
+    <div class="page-sub">每天一句话,记录你用 AI 推进的真实业务——专家与高管的复利在于连续性。</div>
+
+    <div class="checkin-cal">
+      <div class="cal-head">
+        <div class="cal-title" id="cal-month">—</div>
+        <div class="cal-streak" id="cal-streak">连续 0 天 🔥</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <div class="checkin-form">
+      <h3 id="checkin-form-title">今日打卡 · <span id="today-date">—</span></h3>
+      <div class="form-group">
+        <label>今天 AI 帮你推进了什么业务?*</label>
+        <textarea id="ci-what" placeholder="例如:用 Claude 完成了季度战略推演,识别出 3 个被忽视的增长机会..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>调用了哪些工具?(空格分隔)</label>
+        <input type="text" id="ci-tools" placeholder="Claude ChatGPT Midjourney 豆包"/>
+      </div>
+      <div class="form-group">
+        <label>今日洞察(可选)</label>
+        <textarea id="ci-reflect" placeholder="今天哪个判断被 AI 验证或推翻了?有哪些值得团队复用的招?"></textarea>
+      </div>
+      <button class="btn btn-main" style="width:100%;justify-content:center;padding:14px"
+              onclick="submitCheckin()">提交今日打卡</button>
+    </div>
+
+    <div class="checkin-history">
+      <h3 style="font-size:14px;font-weight:700;color:var(--c1);margin-bottom:12px">最近打卡</h3>
+      <div id="checkin-list"><div class="rev-empty">还没有打卡记录,从今天开始吧 🌱</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ SCREEN: 复盘 ════════════════════ -->
+<div id="s-review" class="screen">
+  <div class="page-wrap" style="max-width:680px">
+    <div class="page-title">🔄 每周战略复盘</div>
+    <div class="page-sub">每周一次深度复盘(每自然周仅可提交 1 次),把零散实践沉淀成可复用资产。</div>
+
+    <div class="rev-card">
+      <h3>诊断历史对比</h3>
+      <div id="rev-compare-box"><div class="rev-empty">完成 2 次以上诊断后,这里会显示战力跃迁曲线 📈</div></div>
+    </div>
+
+    <div class="rev-card">
+      <h3>周度战略复盘</h3>
+      <div class="form-group">
+        <label>本周 AI 撬动的最大业务杠杆?</label>
+        <textarea id="rev-win" placeholder="例如:用 Agent 替团队处理了 80% 的客户咨询,节省 30 人时..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>哪个尝试受挫?根因是什么?</label>
+        <textarea id="rev-fail" placeholder="例如:让 AI 直接做战略决策,发现行业 know-how 喂得不够..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>下周的核心突破点?</label>
+        <textarea id="rev-next" placeholder="例如:把客户分层模型抽成可复用的 Agent 工作流..."></textarea>
+      </div>
+      <button class="btn btn-main" style="width:100%;justify-content:center;padding:14px"
+              onclick="submitReview()">沉淀本周复盘</button>
+    </div>
+
+    <div class="rev-card">
+      <h3>复盘档案</h3>
+      <div id="review-list"><div class="rev-empty">还没有复盘记录</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ 网站精灵 ════════════════════ -->
+<button class="sprite-fab" onclick="toggleSprite()" title="询问 ATLAS 助手">⚜</button>
+<div class="sprite-panel" id="sprite-panel">
+  <div class="sprite-head">
+    <div class="sprite-avatar">⚜</div>
+    <div class="sprite-meta">
+      <h4>ATLAS 助手</h4>
+      <p>专为专家与高管的 AI 战力提问</p>
+    </div>
+    <button class="sprite-close" onclick="toggleSprite()">×</button>
+  </div>
+  <div class="sprite-body" id="sprite-body"></div>
+  <div class="sprite-suggests" id="sprite-suggests"></div>
+  <div class="sprite-input">
+    <input type="text" id="sprite-input" placeholder="问我任何AI相关的问题..."
+           onkeydown="if(event.key==='Enter')spriteSend()"/>
+    <button onclick="spriteSend()">发送</button>
+  </div>
+</div>
+
+<!-- ════════════════════ 注册弹窗 ════════════════════ -->
+<div class="modal-mask" id="modal-register">
+  <div class="modal-box" style="max-width:420px;text-align:left">
+    <button class="modal-close" onclick="closeRegister()">×</button>
+    <h3 style="text-align:center">⚜ 注册 ATLAS 账户</h3>
+    <p style="text-align:center;margin-bottom:20px">免费注册,解锁完整 AI 战力跃迁工具</p>
+
+    <div class="gate-perks" style="margin-bottom:18px;box-shadow:none;background:var(--c4);padding:14px 18px">
+      <h4>注册后您将获得</h4>
+      <div class="gate-perk">每周 1 次 AI 战力诊断(免注册仅可 1 次)</div>
+      <div class="gate-perk">每日战力日志 + 月历追踪</div>
+      <div class="gate-perk">每周 1 次深度战略复盘</div>
+      <div class="gate-perk">ATLAS 助手 7×24 私享问答</div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px">
+      <label>姓名 / 称呼 *</label>
+      <input type="text" id="reg-name" placeholder="例如:王总 / 李教授" maxlength="20"/>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>手机 / 微信号 *</label>
+      <input type="text" id="reg-phone" placeholder="11 位手机号或微信号" maxlength="30"/>
+    </div>
+    <div class="form-group" style="margin-bottom:18px">
+      <label>邮箱(选填)</label>
+      <input type="text" id="reg-email" placeholder="用于接收报告" maxlength="60"/>
+    </div>
+
+    <button class="btn btn-main" style="width:100%;justify-content:center;padding:13px"
+            onclick="submitRegister()">完成注册 ⚜</button>
+    <p style="font-size:11px;color:#bbb;text-align:center;margin-top:10px">
+      🔒 数据本地保存,不上传第三方
+    </p>
+  </div>
+</div>
+
+<!-- ════════════════════ 联系/二维码 弹窗 ════════════════════ -->
+<div class="modal-mask" id="modal-contact">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeContact()">×</button>
+    <h3>申请 ATLAS 私享席位</h3>
+    <p>扫码 1v1 沟通,严选行业专家与企业老板,席位有限</p>
+    <div class="modal-qr">ATLAS 顾问微信<br/>(替换为真实图)</div>
+    <p style="font-size:12px">或邮件 · advisor@atlas.cn</p>
+  </div>
+</div>
+
 <footer>
-  <span>AI Coach · 实战陪跑</span> · 2026  ·
-  <!-- TODO: 扩展为完整陪跑平台：学员中心 / 进度看板 / 资源库 -->
-  专注医疗与职场AI能力提升
+  <span>A T L A S</span>
+  专 为 行 业 专 家 与 企 业 决 策 者 的 A I 战 力 跃 迁 &nbsp;·&nbsp; M M X X V I
 </footer>
 
 <script>
@@ -352,156 +795,206 @@ footer span{color:rgba(255,255,255,.8)}
 // ══════════════════════════════════════════════════════
 
 const DIMS = ['工具认知', '提示词能力', '内容创作', '自动化思维', '工作流整合'];
-const DIM_COLORS = ['#1A73C8','#0F9D6E','#F07A1A','#6C3ABF','#C0392B'];
+const DIM_COLORS = ['#1A4D8C','#0F9D6E','#C9A14A','#6C3ABF','#C0392B'];
+
+// ⭐ 题库版本 — 每月更新,保证 AI 能力评估不过时
+// TODO: 后端化后改为月初自动加载最新版本
+let QBANK_VERSION = '2026.05';
+let QBANK_UPDATED = '2026-05-15';
 
 const QS = [
-  // ── 维度0: 工具认知 ──────────────────────────────────
-  { d:0, q:'你目前最常用的AI工具是哪类？',
-    a:['基本不用AI工具，偶尔搜一下',
+  // ── 维度0: 工具认知(4题) ───────────────────────────
+  { d:0, q:'你目前最常用的 AI 工具是哪类?',
+    a:['基本不用,偶尔搜一下',
        '偶尔用豆包/文心一言做简单问答',
-       '稳定使用2-3个工具，包括国内外主流产品',
-       '根据场景切换工具（写作用Claude，图片用Midjourney等）'] },
+       '稳定使用 2-3 个工具,含国内外主流产品',
+       '按场景切换工具(写作 Claude/图片 Midjourney/视频 Sora 等)'] },
 
-  { d:0, q:'以下AI工具类别，你用过几类？\n（写作AI · 图片AI · 视频AI · 研究AI · Agent工具）',
-    a:['只用过1类，其他没接触',
-       '用过2类',
-       '用过3类',
-       '用过4类及以上'] },
+  { d:0, q:'以下 AI 工具类别,你深度用过几类?\n(写作 · 图像 · 视频 · 研究 · Agent · 多模态)',
+    a:['只 1 类,其他没接触',
+       '用过 2 类',
+       '用过 3-4 类',
+       '5 类及以上,且能讲清各家差异'] },
 
-  { d:0, q:'面对同一个任务，你怎么选工具？',
-    a:['用同一个习惯的工具（如豆包），不太换',
+  { d:0, q:'面对同一个任务,你怎么选工具?',
+    a:['用同一个习惯的工具,不太换',
        '偶尔尝试不同工具对比',
-       '大部分情况知道该用哪个工具',
-       '有自己的工具选择SOP，能秒速决策'] },
+       '大部分情况知道该用哪个',
+       '有工具选择 SOP,能秒速决策'] },
 
-  // ── 维度1: 提示词能力 ────────────────────────────────
-  { d:1, q:'你通常怎么给AI下指令？',
-    a:['直接说需求，比如「帮我写篇文章」',
+  // ⭐ 新题(2026.05):前沿模型认知
+  { d:0, q:'2026 年第一梯队模型(Claude 4.x / GPT-5 / Gemini 2.x / 国产顶级模型)你怎么看?',
+    a:['名字都没怎么听过',
+       '听过名字,但没用过付费版',
+       '至少用过 1-2 家付费版,大致知道强弱差异',
+       '同时持有多家订阅,按任务类型精准调度,清楚各家长板'] },
+
+  // ── 维度1: 提示词能力(4题) ─────────────────────────
+  { d:1, q:'你通常怎么给 AI 下指令?',
+    a:['直接说需求,比如「帮我写篇文章」',
        '会加一些背景信息',
        '会设定角色、说明格式和要求',
-       '用结构化模板：角色+背景+任务+格式+约束，全部给到'] },
+       '结构化模板:角色 + 背景 + 任务 + 格式 + 约束 + 示例'] },
 
-  { d:1, q:'AI给的回答不理想时，你会怎么做？',
-    a:['重新问一遍，或者直接放弃',
+  { d:1, q:'AI 给的回答不理想时,你会怎么做?',
+    a:['重新问一遍,或直接放弃',
        '稍微修改问题再问',
-       '指出具体哪里不好，要求针对性修改',
-       '拆解问题，分步骤引导AI逐步完善'] },
+       '指出具体哪里不好,要求针对性修改',
+       '拆解问题,分步引导 AI 逐步完善(思维链/Chain-of-Thought)'] },
 
-  { d:1, q:'你有没有专属的提示词模板或收藏库？',
-    a:['没有，每次都是临时想的',
-       '偶尔会保存用过的好提示词',
-       '有一些常用模板，但不系统',
-       '有完整分类的提示词库，按场景索引随时调用'] },
+  { d:1, q:'你有没有专属的提示词模板或资产库?',
+    a:['没有,每次都是临时想的',
+       '偶尔保存用过的好提示词',
+       '有一些常用模板,但不系统',
+       '完整分类的提示词资产库,按场景索引,团队可复用'] },
 
-  // ── 维度2: 内容创作 ──────────────────────────────────
-  { d:2, q:'用AI写专业内容（如科普文、报告），你的流程是？',
-    a:['让AI直接写，基本直接用',
-       'AI写初稿，我做简单润色',
-       '我设计框架，AI填充，再做专业校验',
-       '完整SOP：选题→框架→AI写→专业校验→多平台适配'] },
+  // ⭐ 新题(2026.05):Extended Thinking 与上下文工程
+  { d:1, q:'对「上下文工程」(Context Engineering)和「深度思考模式」(Extended Thinking)你的理解?',
+    a:['没听说过这两个词',
+       '听过但不太懂区别',
+       '知道核心是给 AI 喂足背景 + 让它先思考再回答',
+       '熟练使用 Claude/GPT 的深度思考模式,会构建领域知识上下文'] },
 
-  { d:2, q:'你能用AI生成符合要求的图片吗？',
-    a:['没试过，不了解',
-       '试过但效果很随机，不能精准控制',
+  // ── 维度2: 内容创作(4题) ───────────────────────────
+  { d:2, q:'用 AI 写专业内容(报告/科普/方案),你的流程是?',
+    a:['让 AI 直接写,基本直接用',
+       'AI 写初稿,我做简单润色',
+       '我设计框架,AI 填充,再做专业校验',
+       '完整 SOP:选题→框架→AI 写→专业校验→多平台适配'] },
+
+  { d:2, q:'你能用 AI 生成符合要求的图片吗?',
+    a:['没试过,不了解',
+       '试过但效果很随机',
        '能生成基本符合要求的图片',
-       '掌握提示词技巧，能精准控制风格、构图、文字'] },
+       '掌握进阶技巧,精准控制风格、构图、文字、品牌一致性'] },
 
-  { d:2, q:'关于AI视频创作，你目前处于哪个阶段？',
+  // ⭐ 新题(2026.05):2026 视频生成爆发
+  { d:2, q:'2026 年 AI 视频生成(Sora 2 / Veo 3 / 可灵 / 即梦)的能力你怎么用?',
     a:['完全没接触过',
-       '知道有这类工具，但没用过',
-       '用过一两次，了解基本操作',
-       '能独立完成：脚本→生成视频→配音→剪辑全流程'] },
+       '玩过几次,做着玩',
+       '能稳定产出 30 秒到 1 分钟的可用素材',
+       '已纳入正式内容生产线,从脚本到成片有完整流程'] },
 
-  // ── 维度3: 自动化思维 ────────────────────────────────
-  { d:3, q:'听到「AI Agent」，你的第一反应是？',
+  { d:2, q:'AI 视频/数字人/播客整合创作,你目前处于哪个阶段?',
+    a:['完全没接触',
+       '知道有这类工具',
+       '用过几次,了解基本流程',
+       '能独立完成:脚本→视频→数字人配音→剪辑→分发全链路'] },
+
+  // ── 维度3: 自动化思维(4题) ─────────────────────────
+  { d:3, q:'听到「AI Agent」,你的第一反应是?',
     a:['不太清楚是什么',
-       '知道是AI助手一类的东西',
-       '了解Agent可以自主执行多步骤任务，不需要人一步步操作',
-       '已在用Agent工具（WorkBuddy / OpenClaw / Claude Code 等）'] },
+       '知道是 AI 助手一类的东西',
+       '了解 Agent 可以自主执行多步骤任务',
+       '已在用 Agent 工具(Claude Code / WorkBuddy / Manus 等)做真实业务'] },
 
-  { d:3, q:'如果有工具可以让AI替你自动完成某项重复性工作，你会？',
-    a:['觉得不靠谱，还是自己手动做',
-       '感兴趣，但不知道怎么设置',
-       '愿意尝试，会花时间研究摸索',
-       '已经在用类似工具，有具体的自动化案例'] },
+  // ⭐ 新题(2026.05):Computer Use & Browser Agent
+  { d:3, q:'对「Computer Use」/「Browser Agent」(让 AI 直接操作电脑和浏览器)的认知?',
+    a:['没听说过',
+       '听过,觉得有点科幻',
+       '了解原理,看过 demo',
+       '已在用类似能力跑日常任务(自动下单/数据采集/跨系统操作)'] },
 
-  { d:3, q:'你目前工作中，有没有被AI「解放」的重复性任务？',
-    a:['没有，所有工作都还是手动完成',
-       '少数简单任务（如查信息）会用AI辅助一下',
-       '多项工作有AI参与，节省了一些时间',
-       '建立了自动化流程，多个场景已由AI接管执行'] },
+  { d:3, q:'如果有工具能让 AI 自动完成某项重复性工作,你会?',
+    a:['觉得不靠谱,还是自己手动',
+       '感兴趣但不知怎么设置',
+       '愿意尝试,会花时间摸索',
+       '已经在用,有具体的自动化案例'] },
 
-  // ── 维度4: 工作流整合 ────────────────────────────────
-  { d:4, q:'AI在你日常工作中的角色是？',
-    a:['偶尔查一下资料，不系统',
-       '辅助工具，有问题才用',
-       '日常工作的重要组成，每天主动使用',
-       'AI是核心工作伙伴，有完整的AI-人协作工作流'] },
+  { d:3, q:'你目前工作中,有没有被 AI 接管的重复性任务?',
+    a:['没有,所有工作都手动',
+       '少数简单任务会用 AI 辅助',
+       '多项工作有 AI 参与,节省了一些时间',
+       '建立了自动化流程,多个场景已由 AI 接管执行'] },
 
-  { d:4, q:'你的AI使用程度和周围同事/同行相比？',
+  // ── 维度4: 工作流整合(4题) ─────────────────────────
+  { d:4, q:'AI 在你日常工作中的角色是?',
+    a:['偶尔查资料,不系统',
+       '辅助工具,有问题才用',
+       '日常工作的重要组成,每天主动使用',
+       'AI 是核心工作伙伴,有完整的人-AI 协作工作流'] },
+
+  // ⭐ 新题(2026.05):多 Agent 协作 & MCP
+  { d:4, q:'对「多 Agent 协作」/「MCP 协议」(让多个 AI 工具协同工作)的实践?',
+    a:['没接触过',
+       '听过概念,没动手',
+       '搭过简单的多 Agent 流水线',
+       '已用 MCP/n8n 等编排了多个 Agent,跨工具协同跑真实业务'] },
+
+  { d:4, q:'你的 AI 使用程度和同行业的同级别专家/老板相比?',
     a:['比大多数人用得少',
-       '差不多，都是基础使用',
+       '差不多,都是基础使用',
        '比大多数人用得多、用得深',
-       '是身边人公认的AI重度用户和「AI达人」'] },
+       '是行业公认的 AI 重度用户与方法论输出者'] },
 
-  { d:4, q:'你觉得自己离「AI让工作效率提升50%以上」还有多远？',
-    a:['很远，现在几乎感觉不到效率提升',
-       '有一些提升，但不稳定、不系统',
-       '部分工作有明显提升，全面提升还需时间',
-       '已经实现，某些核心场景效率提升不止50%'] },
+  { d:4, q:'你离「AI 让团队/业务效率提升 50% 以上」还有多远?',
+    a:['很远,几乎感觉不到提升',
+       '有提升,但不稳定、不系统',
+       '部分场景明显提升,全面提升仍需时间',
+       '已经实现,核心场景效率提升远超 50%'] },
 ];
 
-// ── 段位定义 ──────────────────────────────────────────
+// ── 段位定义(面向专家与高管) ────────────────────────
 const LEVELS = [
-  { min:0,  max:24,  name:'初探者',  emoji:'🌱', color:'#888',
-    title:'AI工具的入门阶段',
-    desc:'你目前对AI工具还处于认知和尝试阶段，使用频率较低，还没形成固定习惯。这很正常——大多数人都是从这里开始的。好消息是，你站在一个全新起点，6周的系统陪跑可以让你快速跨越从「不会用」到「会用AI干活」的最大鸿沟。',
+  { min:0,  max:24,  name:'观望者',  emoji:'🌑', color:'#888',
+    title:'尚未真正进入 AI 战场',
+    desc:'你目前还在外围观察 AI——使用零散、未形成习惯。这在当下的商业环境中正在成为隐性风险:同行已经开始用 AI 重构效率与决策。好消息是,你的行业经验与判断力本身就是最强护城河,补上 AI 这块拼图,跃迁速度会远超新人。',
     plan:'A' },
-  { min:25, max:44,  name:'探索者',  emoji:'🔍', color:'#1A73C8',
-    title:'有基础，但还没形成体系',
-    desc:'你已经在用AI了，也感受到了它的价值，但还处于「摸着石头过河」阶段——工具用得不系统，提示词靠感觉，没有固定工作流。这个阶段最容易停滞：感觉会用，但效率提升有限。你现在需要的不是更多工具，而是一套系统的方法论把已有的感知变成能力。',
+  { min:25, max:44,  name:'入局者',  emoji:'🌓', color:'#1A4D8C',
+    title:'入门已破,但远未形成战力',
+    desc:'你能用 AI 解决一些零散问题,但工具选择、提示词、产出质量都靠感觉。在专家与高管圈层,这个阶段最大风险是"以为自己已经懂了"——AI 的真正杠杆在体系而非工具。你需要的不是更多新工具,而是一套适配你身份的 AI 决策与工作方法论。',
     plan:'B' },
-  { min:45, max:64,  name:'实践者',  emoji:'⚡', color:'#0F9D6E',
-    title:'有工作流雏形，但还没完全打通',
-    desc:'你已经把AI融入了部分工作，有自己的使用心得，但各模块之间还没完全打通——内容、视觉、视频、研究可能分别会用，但没有形成完整的AI工作体系。下一步的突破点：把已有能力串联起来，并向自动化和Agent方向延伸。',
+  { min:45, max:64,  name:'实战派',  emoji:'⚔', color:'#0F9D6E',
+    title:'AI 已嵌入工作,体系尚未打通',
+    desc:'你已经把 AI 用进了真实业务,有自己的心得与产出。瓶颈是各模块之间没串成体系——内容、研究、决策、自动化散落各处。下一阶段的关键:把 AI 从"个人工具"升级为"组织/业务的战略资产"。',
     plan:'B' },
-  { min:65, max:82,  name:'进阶者',  emoji:'🏃', color:'#F07A1A',
-    title:'工作流已建立，攻克自动化是关键',
-    desc:'你已经是周围人中AI使用较为深度的那类了。有自己的提示词库，能产出高质量内容，对多种工具有实践。现在需要的是进入下一个台阶：用Agent工具自动化执行层，让AI真正替你干活，而不只是辅助你干活。这个突破完成之后，你将进入驾驭者阶段。',
+  { min:65, max:82,  name:'破局者',  emoji:'🏆', color:'#C9A14A',
+    title:'已建立工作流,Agent 化是分水岭',
+    desc:'你已经远超同行业大多数人。有自己的提示词资产、稳定输出和多工具实践。下一个分水岭是 Agent 化:让 AI 自主执行而非辅助执行,让团队/组织而非个人享受 AI 红利。跨过这一步,你将进入宗师段位。',
     plan:'C' },
-  { min:83, max:100, name:'驾驭者',  emoji:'🚀', color:'#6C3ABF',
-    title:'你已具备AI体系化使用能力',
-    desc:'恭喜——你已经处于大多数专业人士遥不可及的阶段。有完整的工作流、自动化流程和清晰的AI使用策略。在这个阶段，陪跑的价值在于帮你进一步深化垂直领域应用、探索更前沿的Agent编排能力，并把你的AI体系向外输出。',
+  { min:83, max:100, name:'宗师',  emoji:'⚜', color:'#0A2540',
+    title:'AI 已成为你的战略杠杆',
+    desc:'你已站在行业 AI 应用的顶端梯队。有完整的工作流、自有 Agent 编排、清晰的 AI 战略观。这个段位的陪跑不再是"教你用",而是深度共创:垂直领域的 AI 产品化、组织级 AI 转型方案、个人 IP 与行业话语权的进一步放大。',
     plan:'C' },
 ];
 
-// ── 陪跑方案 ──────────────────────────────────────────
+// ── 私享陪跑方案(面向专家与企业老板) ───────────────────
 // TODO: 对接后端报价接口
 const PLANS = {
-  A:{ name:'方案 A · 基础陪跑', dur:'4周', price:'6,800',
-      desc:'适合从零建立系统的AI用法，先打基础、搭框架，稳步积累。',
-      feats:['定制课程路径','每天微信文字答疑','每周1次视频复盘（1小时）','行业垂直提示词模板库','全套工具安装配置指导'] },
-  B:{ name:'方案 B · 深度陪跑', dur:'6周', price:'12,800',
-      desc:'最受欢迎——全面能力升级，直接解决你真实工作中的难题，Agent工具专属配置。',
-      feats:['包含方案A全部内容','每天30分钟语音/视频同步','直接参与你的真实工作任务（课题/内容/自动化）','Agent工具（WorkBuddy/OpenClaw）专属配置','个人IP内容矩阵策划','结营后30天持续答疑'] },
-  C:{ name:'方案 C · 全程VIP', dur:'8周', price:'19,800',
-      desc:'适合希望打造个人IP、向外输出AI能力的进阶学员，全方位深度支持。',
-      feats:['包含方案B全部内容','每周2次深度1v1（各1.5小时）','10篇内容深度共创（从选题到发布全程）','内容矩阵从零搭建（公众号/小红书）','行业AI推广方案（可向组织输出）','结营后3个月持续跟进'] },
+  A:{ name:'ATLAS · Foundation', dur:'4 周', price:'19,800',
+      desc:'适合刚开始系统化使用 AI 的专家与高管,建立基础认知与个人工作流。',
+      feats:['1v1 定制学习路径','每日微信专属答疑','每周 1 次 1v1 视频复盘(1 小时)','行业垂直提示词资产库','全套主流工具配置与账号策略'] },
+  B:{ name:'ATLAS · Prime', dur:'6 周', price:'39,800',
+      desc:'最受欢迎——专家与决策者首选,直接介入真实业务,Agent 工具专属部署。',
+      feats:['包含 Foundation 全部内容','每日 30 分钟语音/视频 1v1','直接参与你的真实业务任务(决策/内容/自动化)','Agent 工具(Claude Code / WorkBuddy)专属部署','个人 IP 内容矩阵规划','结营后 60 天持续答疑'] },
+  C:{ name:'ATLAS · Apex', dur:'8 周 + 季度护航', price:'89,800',
+      desc:'适合企业创始人与行业顶尖专家,组织级 AI 转型 + 个人话语权双线推进。',
+      feats:['包含 Prime 全部内容','每周 2 次深度 1v1(各 1.5 小时)','10 篇行业旗舰内容深度共创','组织级 AI 转型咨询(团队培训 + 流程梳理)','个人 IP 矩阵搭建与高端变现规划','结营后 3 个月私享顾问跟进'] },
 };
 
 // ══════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════
 let curQ = 0;
-let ans  = new Array(15).fill(null);
+let ans  = new Array(20).fill(null);
 let user = { name:'', industry:'', goal:'' };
 
 // ══════════════════════════════════════════════════════
 //  NAVIGATION
 // ══════════════════════════════════════════════════════
 function goto(id) {
+  // 注册门禁:打卡 / 复盘 必须先注册
+  if ((id === 'checkin' || id === 'review') && !isRegistered()){
+    openRegister(id);
+    return;
+  }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('s-' + id).classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  const nav = document.getElementById('nav-' + id);
+  if (nav) nav.classList.add('active');
+  if (id === 'checkin') renderCheckin();
+  if (id === 'review')  renderReview();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -513,9 +1006,23 @@ function startQuiz() {
   const industry = document.getElementById('f-industry').value;
   const goal     = document.getElementById('f-goal').value;
   if (!name || !industry || !goal) { alert('请完整填写信息后继续 😊'); return; }
+
+  // 测评限额检查
+  const gate = canTakeQuiz();
+  if (!gate.ok){
+    if (gate.reason === 'register'){
+      if (confirm('您已用完免费 1 次诊断。\n注册 ATLAS 账户后,每周可重测追踪跃迁。\n\n现在注册?')) openRegister('info');
+      return;
+    }
+    if (gate.reason === 'weekly'){
+      alert(`您已是注册用户,但本周已诊断过。\n下次可诊断时间:${gate.nextDate}\n(剩余 ${gate.daysLeft} 天)`);
+      return;
+    }
+  }
+
   user = { name, industry, goal };
   curQ = 0;
-  ans  = new Array(15).fill(null);
+  ans  = new Array(QS.length).fill(null);
   renderQ();
   goto('quiz');
 }
@@ -529,6 +1036,7 @@ function renderQ() {
 
   document.getElementById('prog-sec').textContent   = DIMS[q.d];
   document.getElementById('prog-cnt').textContent   = `${curQ + 1} / ${QS.length}`;
+  document.getElementById('prog-ver').textContent   = `EDITION ${QBANK_VERSION}`;
   document.getElementById('prog-fill').style.width  = pct + '%';
   document.getElementById('q-tag').textContent      = `问题 ${curQ + 1}`;
   document.getElementById('q-text').textContent     = q.q;
@@ -566,13 +1074,17 @@ function prevQ() {
 
 // ══════════════════════════════════════════════════════
 //  SCORING
-//  每题 0-3分，每维度 3题 × 3 = 9分，总分 45 → 归一化到 100
+//  每题 0-3 分,每维度 4 题 × 3 = 12 分,总分 60 → 归一化到 100
+//  动态计算每维题数,后续题库扩展也能自适应
 // ══════════════════════════════════════════════════════
 function calcScore() {
   const dimRaw = [0, 0, 0, 0, 0];
+  const dimMax = [0, 0, 0, 0, 0];
+  QS.forEach(q => { dimMax[q.d] += 3; });
   ans.forEach((v, i) => { if (v !== null) dimRaw[QS[i].d] += v; });
-  const dimPct = dimRaw.map(s => Math.round(s / 9 * 100));
-  const total  = Math.round(dimRaw.reduce((a, b) => a + b, 0) / 45 * 100);
+  const dimPct = dimRaw.map((s, i) => dimMax[i] ? Math.round(s / dimMax[i] * 100) : 0);
+  const totalMax = dimMax.reduce((a, b) => a + b, 0);
+  const total = Math.round(dimRaw.reduce((a, b) => a + b, 0) / totalMax * 100);
   return { dimPct, total };
 }
 
@@ -584,7 +1096,8 @@ function showResult() {
   const level = LEVELS.find(l => total >= l.min && total <= l.max) || LEVELS[0];
 
   // Hero
-  document.getElementById('res-name').textContent  = `${user.name} 的AI能力报告`;
+  document.getElementById('res-name').textContent  = `${user.name} 的 AI 战力报告`;
+  document.getElementById('res-ver').textContent   = `题库 v${QBANK_VERSION}`;
   document.getElementById('res-level').textContent = `${level.emoji}  ${level.name}`;
   document.getElementById('res-level').style.background = level.color + '30';
 
@@ -647,7 +1160,7 @@ function showResult() {
 //  RESET
 // ══════════════════════════════════════════════════════
 function resetAll() {
-  curQ = 0; ans = new Array(15).fill(null); user = {};
+  curQ = 0; ans = new Array(QS.length).fill(null); user = {};
   ['f-name','f-industry','f-goal'].forEach(id => {
     const el = document.getElementById(id);
     if (el.tagName === 'INPUT') el.value = '';
@@ -655,6 +1168,681 @@ function resetAll() {
   });
   goto('home');
 }
+
+// ══════════════════════════════════════════════════════
+//  STORAGE (localStorage 持久化层)
+//  TODO: 后续替换为后端 API
+// ══════════════════════════════════════════════════════
+const LS = {
+  get(k, def){ try{ return JSON.parse(localStorage.getItem('aicoach_'+k)) ?? def; }catch{ return def; } },
+  set(k, v){ localStorage.setItem('aicoach_'+k, JSON.stringify(v)); },
+};
+
+// 在测评完成时存历史
+const _origShowResult = showResult;
+showResult = function() {
+  _origShowResult();
+  const { dimPct, total } = calcScore();
+  const level = LEVELS.find(l => total >= l.min && total <= l.max) || LEVELS[0];
+  const history = LS.get('history', []);
+  history.push({
+    date: new Date().toISOString(),
+    user: { ...user },
+    total, dimPct,
+    level: level.name,
+    qbank: QBANK_VERSION,   // 记录题库版本,便于跨版本对比时标注
+  });
+  LS.set('history', history);
+  LS.set('user', user);
+};
+
+// ══════════════════════════════════════════════════════
+//  打卡 CHECK-IN
+// ══════════════════════════════════════════════════════
+function todayKey(d){ d = d || new Date(); return d.toISOString().slice(0,10); }
+
+function renderCheckin(){
+  const today = todayKey();
+  document.getElementById('today-date').textContent = today;
+
+  const checkins = LS.get('checkins', []);
+  const map = {};
+  checkins.forEach(c => map[c.date] = c);
+
+  // 月历
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  document.getElementById('cal-month').textContent = `${y}年 ${m+1}月`;
+  const firstDay = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  ['日','一','二','三','四','五','六'].forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-day-label'; el.textContent = d; grid.appendChild(el);
+  });
+  for (let i=0; i<firstDay; i++){
+    const el = document.createElement('div'); el.className='cal-day empty'; grid.appendChild(el);
+  }
+  for (let d=1; d<=daysInMonth; d++){
+    const key = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const el = document.createElement('div');
+    el.className = 'cal-day';
+    if (map[key]) el.classList.add('has');
+    if (key === today) el.classList.add('today');
+    el.textContent = d;
+    grid.appendChild(el);
+  }
+
+  // 连续天数
+  let streak = 0;
+  for (let i=0; i<365; i++){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    if (map[todayKey(d)]) streak++; else if (i>0) break;
+  }
+  document.getElementById('cal-streak').textContent = `连续 ${streak} 天 🔥`;
+
+  // 历史列表
+  const list = document.getElementById('checkin-list');
+  if (!checkins.length){
+    list.innerHTML = '<div class="rev-empty">还没有打卡记录,从今天开始吧 🌱</div>';
+  } else {
+    list.innerHTML = checkins.slice().reverse().slice(0,10).map(c => `
+      <div class="checkin-item">
+        <div class="checkin-date">${c.date}</div>
+        <div class="checkin-text">${escapeHtml(c.what)}</div>
+        ${c.reflect ? `<div class="checkin-text" style="color:var(--muted);margin-top:4px">💭 ${escapeHtml(c.reflect)}</div>` : ''}
+        ${c.tools && c.tools.length ? `<div class="checkin-tags">${c.tools.map(t=>`<span class="checkin-tag">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+      </div>`).join('');
+  }
+
+  // 今日已打卡则回显
+  const todayItem = map[today];
+  if (todayItem){
+    document.getElementById('ci-what').value = todayItem.what || '';
+    document.getElementById('ci-tools').value = (todayItem.tools||[]).join(' ');
+    document.getElementById('ci-reflect').value = todayItem.reflect || '';
+    document.getElementById('checkin-form-title').innerHTML = `今日已打卡(可更新) · <span>${today}</span>`;
+  }
+}
+
+function submitCheckin(){
+  const what = document.getElementById('ci-what').value.trim();
+  if (!what){ alert('至少写一句今天用AI做了什么 😊'); return; }
+  const tools = document.getElementById('ci-tools').value.trim().split(/\s+/).filter(Boolean);
+  const reflect = document.getElementById('ci-reflect').value.trim();
+  const today = todayKey();
+  let checkins = LS.get('checkins', []);
+  checkins = checkins.filter(c => c.date !== today);
+  checkins.push({ date: today, what, tools, reflect, ts: Date.now() });
+  LS.set('checkins', checkins);
+  renderCheckin();
+  alert('打卡成功 ✨');
+}
+
+// ══════════════════════════════════════════════════════
+//  复盘 REVIEW
+// ══════════════════════════════════════════════════════
+function renderReview(){
+  const history = LS.get('history', []);
+  const cmp = document.getElementById('rev-compare-box');
+  if (history.length < 2){
+    cmp.innerHTML = `<div class="rev-empty">完成 2 次以上测评后,这里会显示能力变化曲线 📈<br><br>
+      <button class="btn btn-ghost" onclick="goto('home')">去测评</button></div>`;
+  } else {
+    const first = history[0], last = history[history.length-1];
+    const delta = last.total - first.total;
+    const sameVer = first.qbank === last.qbank;
+    cmp.innerHTML = `
+      <div class="rev-compare">
+        <div class="rev-col">
+          <div class="rev-col-label">首次诊断 · v${first.qbank||'—'}</div>
+          <div class="rev-col-score">${first.total}</div>
+          <div class="rev-col-date">${first.date.slice(0,10)} · ${first.level}</div>
+        </div>
+        <div class="rev-col">
+          <div class="rev-col-label">最近诊断 · v${last.qbank||'—'}</div>
+          <div class="rev-col-score" style="color:var(--gold)">${last.total}</div>
+          <div class="rev-col-date">${last.date.slice(0,10)} · ${last.level}</div>
+        </div>
+      </div>
+      <div class="rev-delta ${delta>=0?'up':'down'}">
+        ${delta>=0?'📈 提升':'📉 下降'} ${Math.abs(delta)} 分 · 共诊断 ${history.length} 次
+      </div>
+      ${!sameVer ? '<div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:10px">⚠ 跨题库版本对比,因 AI 能力前沿变化,得分可参考但不严格等价</div>' : ''}
+      <div style="text-align:center"><button class="btn btn-ghost" onclick="goto('home')">再测一次</button></div>`;
+  }
+
+  const reviews = LS.get('reviews', []);
+  const rl = document.getElementById('review-list');
+  if (!reviews.length){
+    rl.innerHTML = '<div class="rev-empty">还没有复盘记录</div>';
+  } else {
+    rl.innerHTML = reviews.slice().reverse().map(r => `
+      <div class="checkin-item">
+        <div class="checkin-date">${r.date}${r.week ? ' · 第 '+r.week.split('-W')[1]+' 周' : ''}</div>
+        ${r.win ? `<div class="checkin-text"><b>🎯 收获:</b> ${escapeHtml(r.win)}</div>` : ''}
+        ${r.fail ? `<div class="checkin-text" style="margin-top:4px"><b>⚠️ 失败:</b> ${escapeHtml(r.fail)}</div>` : ''}
+        ${r.next ? `<div class="checkin-text" style="margin-top:4px"><b>🚀 下周:</b> ${escapeHtml(r.next)}</div>` : ''}
+      </div>`).join('');
+  }
+
+  // 周限额状态提示
+  const gate = canReview();
+  const submitBtn = document.querySelector('#s-review button.btn-main');
+  if (submitBtn){
+    if (!gate.ok){
+      submitBtn.disabled = true;
+      submitBtn.textContent = `本周已提交 · ${gate.daysLeft} 天后可再写`;
+      submitBtn.style.opacity = '.5';
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '沉淀本周复盘';
+      submitBtn.style.opacity = '1';
+    }
+  }
+}
+
+function submitReview(){
+  // 周复盘限额:每自然周仅 1 次
+  const gate = canReview();
+  if (!gate.ok){
+    alert(`本周已提交过战略复盘。\n下次可提交时间:${gate.nextDate}\n(剩余 ${gate.daysLeft} 天)\n\n战略复盘的价值在于「沉淀」而非「数量」——\n建议这几天继续每日打卡积累素材。`);
+    return;
+  }
+  const win = document.getElementById('rev-win').value.trim();
+  const fail = document.getElementById('rev-fail').value.trim();
+  const next = document.getElementById('rev-next').value.trim();
+  if (!win && !fail && !next){ alert('至少填一项 😊'); return; }
+  const reviews = LS.get('reviews', []);
+  const wk = isoWeekKey(new Date());
+  reviews.push({ date: todayKey(), week: wk, win, fail, next, ts: Date.now() });
+  LS.set('reviews', reviews);
+  ['rev-win','rev-fail','rev-next'].forEach(id => document.getElementById(id).value='');
+  renderReview();
+  alert('本周复盘已沉淀 ✨');
+}
+
+// ══════════════════════════════════════════════════════
+//  网站精灵 SPRITE
+//  sendMessage(text, ctx) 是统一接口 — 现在用 mock,后续接后端只改这一个函数
+// ══════════════════════════════════════════════════════
+const SPRITE_GREETING = '您好,我是 **ATLAS 助手** ⚜\n\n专为行业专家与企业老板的 AI 战力问题,例如:\n• 我的诊断报告意味着什么?\n• 高管该怎么用 AI 做决策辅助?\n• 企业内部该怎么部署 Agent?\n• 行业 KOL 如何用 AI 放大话语权?';
+const SPRITE_SUGGESTS_DEFAULT = ['高管怎么用AI做决策?','企业Agent怎么落地?','我的诊断怎么解读?','申请陪跑席位'];
+let spriteHistory = [];
+
+async function sendMessage(text, ctx){
+  // ⭐ Agent 后端接入点 ⭐
+  // 后续改这里即可对接:n8n / DeepSeek / 豆包 / 自有后端
+  // ctx 包含:用户信息、最近测评、最近打卡,可作为 prompt 注入
+  // return await fetch('/api/agent', { method:'POST', body: JSON.stringify({text, ctx}) }).then(r=>r.text());
+  return mockReply(text, ctx);
+}
+
+function mockReply(text, ctx){
+  const t = text.toLowerCase();
+  const lastScore = ctx.history.length ? ctx.history[ctx.history.length-1].total : null;
+  const userName = ctx.user.name || '您';
+
+  if (/(你好|您好|hi|hello|在吗)/i.test(t))
+    return `${userName}好。可以问我:**高管 AI 决策辅助、企业 Agent 部署、行业 IP 放大、诊断报告解读、陪跑方案** 等任何战力相关的问题。`;
+  if (/(决策|战略|高管|老板|ceo)/i.test(t))
+    return '高管用 AI 做决策的核心 ≠ 让 AI 替你决策,而是**用 AI 做高质量推演**:\n\n1. **多视角推演** — 让 AI 同时扮演 CFO/COO/竞品 CEO,给同一议题三套视角\n2. **盲点扫描** — 把决策草案丢给 AI,要求列出"5 个最致命的反对意见"\n3. **沙盘模拟** — 用 Claude 跑 6-12 个月的业务推演,识别拐点\n\nATLAS 私享陪跑里这是核心模块。';
+  if (/(企业|组织|团队|公司|部署|落地)/i.test(t))
+    return '企业级 AI 落地的常见误区是**先选工具再想流程**,顺序应该反过来:\n\n1. 梳理 5-10 个最高频/高价值的工作流\n2. 识别其中哪些是"决策密集 vs 执行密集"\n3. 决策密集 → 给高管配专属 Agent 助手\n4. 执行密集 → 用 Claude Code / n8n / WorkBuddy 做自动化\n\nATLAS · Apex 包含完整的组织 AI 化诊断。';
+  if (/(提示词|prompt)/.test(t))
+    return '高管级提示词四件套:**角色 + 商业背景 + 任务目标 + 输出约束**。\n\n范例:"你是麦肯锡战略合伙人,客户是年营收 5 亿的连锁医疗集团,正在考虑是否布局 AI 问诊。请用 BCG 矩阵分析,给出 3 个进入路径与各自的 12 个月里程碑。"\n\n关键差别:**给足商业上下文**,远比技巧重要。';
+  if (/(ip|影响力|话语权|个人品牌|kol)/i.test(t))
+    return '专家做 AI 时代的行业 IP,杠杆点已经变了:\n\n• **过去**:写文章 → 攒粉丝\n• **现在**:用 AI 把你的 know-how 沉淀为可调用的"专家 Agent",让影响力 7×24 复利\n\nATLAS · Prime / Apex 包含个人 IP 矩阵 + 行业 Agent 化的完整设计。';
+  if (/(日志|打卡|坚持|习惯)/i.test(t))
+    return '战力日志对高管的真正价值不是"打卡",而是**让 AI 实战经验变成可复用资产**:\n\n1. 每天 30 秒记录今天 AI 推进了哪个业务\n2. 每周复盘哪些招可以让团队复用\n3. 季度沉淀为组织 SOP\n\nATLAS 学员中,这套日志直接成了团队培训素材。';
+  if (/(诊断|测评|得分|分数|结果|报告)/i.test(t)){
+    if (lastScore !== null)
+      return `${userName}最近的诊断是 **${lastScore} 分**。\n\n${lastScore<45?'目前还在入局阶段,核心建议:先建立属于你身份(专家/高管)的 AI 决策框架,而不是花时间研究工具花活。':lastScore<65?'已具备实战基础,下一阶段的杠杆在**体系化**:把零散能力串成工作流,并向 Agent 化延伸。':'已属破局/宗师段位,陪跑价值在于深度共创——组织级 AI 转型 + 个人话语权放大。'}\n\n建议关注「私享陪跑方案」中的推荐选项。`;
+    return '您还未完成诊断,建议先用 5 分钟完成 AI 战力评估,再讨论具体路径。';
+  }
+  if (/(陪跑|方案|价格|费用|多少钱|席位)/i.test(t))
+    return 'ATLAS 私享陪跑三档:\n• **ATLAS · Foundation** 4 周 ¥19,800 — 体系构建\n• **ATLAS · Prime** 6 周 ¥39,800 — 最受欢迎,Agent + 真实业务介入\n• **ATLAS · Apex** 8 周 + 季度护航 ¥89,800 — 组织级转型 + 个人 IP 放大\n\n席位严选,点页面底部"申请 ATLAS 私享席位"对接顾问。';
+  if (/(agent|自动化|claude code)/i.test(t))
+    return 'Agent 是 2026 年专家与企业拉开身位的核心杠杆——它不只是答题,而是**自主执行多步业务**。\n\n推荐栈:\n• **Claude Code** — 决策推演、文档/数据自动化的旗舰\n• **WorkBuddy** — 中文办公场景\n• **n8n + Claude** — 企业级业务流自动化\n\nATLAS · Prime / Apex 均包含 Agent 工具专属部署。';
+
+  return `这是个值得深聊的问题 ⚜\n\n您也可以试问:\n• "高管该怎么用 AI 做决策?"\n• "企业 Agent 怎么落地?"\n• "我的诊断结果怎么解读?"\n• "怎么申请陪跑席位?"\n\n(当前为 Mock 模式,接入真实 Agent 后端后将基于您的诊断/日志数据给出更深定制建议)`;
+}
+
+function toggleSprite(){
+  const p = document.getElementById('sprite-panel');
+  p.classList.toggle('open');
+  if (p.classList.contains('open') && !spriteHistory.length){
+    spritePush('bot', SPRITE_GREETING);
+    renderSuggests(SPRITE_SUGGESTS_DEFAULT);
+  }
+}
+
+function spritePush(role, text){
+  spriteHistory.push({ role, text });
+  const body = document.getElementById('sprite-body');
+  const msg = document.createElement('div');
+  msg.className = 'msg ' + role;
+  msg.innerHTML = `<div class="msg-bubble">${formatMd(text)}</div>`;
+  body.appendChild(msg);
+  body.scrollTop = body.scrollHeight;
+}
+
+function renderSuggests(items){
+  const box = document.getElementById('sprite-suggests');
+  box.innerHTML = items.map(s => `<div class="sug-chip" onclick="spriteAsk('${s.replace(/'/g,"\\'")}')">${s}</div>`).join('');
+}
+
+function spriteAsk(text){
+  document.getElementById('sprite-input').value = text;
+  spriteSend();
+}
+
+async function spriteSend(){
+  const input = document.getElementById('sprite-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  spritePush('user', text);
+  renderSuggests([]);
+
+  const typing = document.createElement('div');
+  typing.className = 'msg bot';
+  typing.innerHTML = '<div class="msg-bubble">…</div>';
+  document.getElementById('sprite-body').appendChild(typing);
+
+  const ctx = {
+    user: LS.get('user', {}),
+    history: LS.get('history', []),
+    checkins: LS.get('checkins', []),
+    currentScreen: document.querySelector('.screen.active')?.id,
+  };
+  const reply = await sendMessage(text, ctx);
+  typing.remove();
+  spritePush('bot', reply);
+  renderSuggests(SPRITE_SUGGESTS_DEFAULT);
+}
+
+function formatMd(text){
+  return escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/\n/g, '<br>');
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ══════════════════════════════════════════════════════
+//  联系弹窗 + 报告导出
+// ══════════════════════════════════════════════════════
+function openContact(){ document.getElementById('modal-contact').classList.add('open'); }
+function closeContact(){ document.getElementById('modal-contact').classList.remove('open'); }
+
+async function exportReport(){
+  const el = document.querySelector('#s-result');
+  if (!el) return;
+  try {
+    const canvas = await html2canvas(el, { backgroundColor:'#F7F9FC', scale:2 });
+    const link = document.createElement('a');
+    link.download = `AI能力报告_${user.name||'我'}_${todayKey()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e){ alert('导出失败:' + e.message); }
+}
+
+// ══════════════════════════════════════════════════════
+//  账户系统(免费注册,localStorage 兜底)
+// ══════════════════════════════════════════════════════
+function getAccount(){ return LS.get('account', null); }
+function isRegistered(){ return !!getAccount(); }
+
+let pendingReturnTo = null;
+function openRegister(returnTo){
+  pendingReturnTo = returnTo || null;
+  // 预填已知信息
+  const u = LS.get('user', {});
+  if (u.name) document.getElementById('reg-name').value = u.name;
+  document.getElementById('modal-register').classList.add('open');
+}
+function closeRegister(){ document.getElementById('modal-register').classList.remove('open'); }
+
+function submitRegister(){
+  const name  = document.getElementById('reg-name').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  if (!name || !phone){ alert('请填写姓名和手机/微信号'); return; }
+  if (!/^[\w@.+-]{5,}$/i.test(phone) && !/^1\d{10}$/.test(phone)){
+    alert('手机号或微信号格式异常,请检查'); return;
+  }
+  const account = { name, phone, email, registeredAt: new Date().toISOString() };
+  LS.set('account', account);
+  // 同步姓名到 user
+  const u = LS.get('user', {}); u.name = name; LS.set('user', u); user.name = name;
+  closeRegister();
+  renderAccountChip();
+  alert(`✨ 欢迎,${name}!\n您已成为 ATLAS 注册用户,可使用每周诊断、每日打卡、每周复盘。`);
+  if (pendingReturnTo){ const t = pendingReturnTo; pendingReturnTo = null; goto(t); }
+}
+
+function renderAccountChip(){
+  const chip = document.getElementById('nav-account');
+  if (!chip) return;
+  const a = getAccount();
+  if (a){
+    chip.textContent = `⚜ ${a.name}`;
+    chip.style.background = 'rgba(201,161,74,.22)';
+    chip.style.color = '#fff';
+    chip.style.borderColor = 'rgba(201,161,74,.5)';
+  } else {
+    chip.textContent = '免费注册';
+    chip.style.background = 'rgba(255,255,255,.14)';
+    chip.style.color = 'rgba(255,255,255,.85)';
+  }
+}
+function onAccountChip(){
+  const a = getAccount();
+  if (a){
+    if (confirm(`已登录:${a.name}\n手机/微信:${a.phone}\n\n要退出账户吗?(本地数据不会删除)`)){
+      localStorage.removeItem('aicoach_account');
+      renderAccountChip();
+    }
+  } else openRegister(null);
+}
+
+// ══════════════════════════════════════════════════════
+//  限额闸门
+// ══════════════════════════════════════════════════════
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+function fmtDate(d){ return d.toISOString().slice(0,10); }
+
+function canTakeQuiz(){
+  const hist = LS.get('history', []);
+  if (hist.length === 0) return { ok:true };           // 首次免费
+  if (!isRegistered()) return { ok:false, reason:'register' };
+  const lastTs = new Date(hist[hist.length-1].date).getTime();
+  const diff = Date.now() - lastTs;
+  if (diff < WEEK_MS){
+    const left = Math.ceil((WEEK_MS - diff)/86400000);
+    return { ok:false, reason:'weekly', daysLeft:left, nextDate: fmtDate(new Date(lastTs + WEEK_MS)) };
+  }
+  return { ok:true };
+}
+
+function isoWeekKey(d){
+  // ISO 8601 周编号:YYYY-Www
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const wk = Math.ceil(((t - yearStart) / 86400000 + 1) / 7);
+  return `${t.getUTCFullYear()}-W${String(wk).padStart(2,'0')}`;
+}
+
+function canReview(){
+  if (!isRegistered()) return { ok:false, reason:'register' };
+  const reviews = LS.get('reviews', []);
+  if (!reviews.length) return { ok:true };
+  const thisWeek = isoWeekKey(new Date());
+  const lastWeek = reviews[reviews.length-1].week || isoWeekKey(new Date(reviews[reviews.length-1].ts));
+  if (lastWeek === thisWeek){
+    // 算下一个周一的日期
+    const now = new Date();
+    const daysUntilMon = (8 - (now.getDay() || 7)) % 7 || 7;
+    return { ok:false, reason:'weekly', daysLeft:daysUntilMon,
+             nextDate: fmtDate(new Date(now.getTime() + daysUntilMon * 86400000)) };
+  }
+  return { ok:true };
+}
+
+// 注册门禁:打卡也要登录(submitCheckin 二次拦截)
+const _origSubmitCheckin = submitCheckin;
+submitCheckin = function(){
+  if (!isRegistered()){
+    if (confirm('每日打卡需先注册 ATLAS 账户,现在注册?')) openRegister('checkin');
+    return;
+  }
+  _origSubmitCheckin();
+};
+
+// ══════════════════════════════════════════════════════
+//  精灵拖动(FAB 和 面板)
+// ══════════════════════════════════════════════════════
+function makeDraggable(el, handle, storageKey){
+  let startX, startY, startLeft, startTop, dragging=false, moved=false;
+  const onDown = (e) => {
+    if (e.target.closest('.sprite-close')) return;
+    const p = e.touches ? e.touches[0] : e;
+    startX = p.clientX; startY = p.clientY;
+    const rect = el.getBoundingClientRect();
+    startLeft = rect.left; startTop = rect.top;
+    dragging = true; moved = false;
+    el.classList.add('dragging');
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, { passive:false });
+    document.addEventListener('touchend', onUp);
+    e.preventDefault();
+  };
+  const onMove = (e) => {
+    if (!dragging) return;
+    const p = e.touches ? e.touches[0] : e;
+    const dx = p.clientX - startX, dy = p.clientY - startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+    const w = el.offsetWidth, h = el.offsetHeight;
+    let nx = Math.max(8, Math.min(window.innerWidth - w - 8, startLeft + dx));
+    let ny = Math.max(8, Math.min(window.innerHeight - h - 8, startTop + dy));
+    el.style.left = nx + 'px'; el.style.top = ny + 'px';
+    el.style.right = 'auto'; el.style.bottom = 'auto';
+    if (e.cancelable) e.preventDefault();
+  };
+  const onUp = () => {
+    dragging = false; el.classList.remove('dragging');
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onUp);
+    if (moved && storageKey){
+      LS.set(storageKey, { left:el.style.left, top:el.style.top });
+    }
+  };
+  handle.addEventListener('mousedown', onDown);
+  handle.addEventListener('touchstart', onDown, { passive:false });
+
+  // 恢复位置
+  if (storageKey){
+    const pos = LS.get(storageKey, null);
+    if (pos && pos.left && pos.top){
+      el.style.left = pos.left; el.style.top = pos.top;
+      el.style.right = 'auto'; el.style.bottom = 'auto';
+    }
+  }
+  // 用 moved 标记区分 click vs drag,只在没拖动时触发原 click
+  return () => moved;
+}
+
+// 替换 fab 的 onclick,实现 click-vs-drag 区分
+function initSpriteDrag(){
+  const fab = document.querySelector('.sprite-fab');
+  const panel = document.getElementById('sprite-panel');
+  const head = panel.querySelector('.sprite-head');
+  if (!fab || !panel || !head) return;
+
+  // FAB: 拖动 + 点击切换
+  fab.onclick = null;
+  const fabMoved = makeDraggable(fab, fab, 'sprite_fab_pos');
+  fab.addEventListener('click', (e) => {
+    if (fabMoved()) { e.stopPropagation(); return; }
+    toggleSprite();
+  });
+
+  // 面板:通过 head 拖动
+  makeDraggable(panel, head, 'sprite_panel_pos');
+}
+
+// ══════════════════════════════════════════════════════
+//  Supabase 云同步层
+//  config.js 加载失败时所有 cloud.* 函数空操作,完全降级到 localStorage
+// ══════════════════════════════════════════════════════
+const cloud = (function(){
+  const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+  if (!url || !key || !window.supabase || url.includes('你的项目')){
+    console.info('[ATLAS] 云同步未启用(config.js 未配置),走本地模式');
+    return { enabled:false, sb:null };
+  }
+  const sb = window.supabase.createClient(url, key, { auth:{ persistSession:false } });
+  console.info('[ATLAS] 云同步已启用');
+  return { enabled:true, sb };
+})();
+
+// 拿到/新建账户的 id(以 phone 为唯一键)
+async function cloudUpsertAccount(account){
+  if (!cloud.enabled) return null;
+  const row = {
+    name: account.name,
+    phone: account.phone,
+    email: account.email || null,
+    industry: (LS.get('user',{}).industry) || null,
+    goal:     (LS.get('user',{}).goal) || null,
+  };
+  const { data, error } = await cloud.sb.from('accounts').upsert(row, { onConflict:'phone' }).select().single();
+  if (error){ console.warn('[ATLAS] upsert account 失败', error); return null; }
+  // 缓存 id 到本地,后续打卡/复盘要用
+  LS.set('cloud_account_id', data.id);
+  return data.id;
+}
+
+async function cloudInsertAssessment(record){
+  if (!cloud.enabled) return;
+  const accountId = LS.get('cloud_account_id', null);
+  const phone = (getAccount() || {}).phone || ('anon-' + Math.random().toString(36).slice(2,10));
+  const { error } = await cloud.sb.from('assessments').insert({
+    account_id: accountId,
+    phone,
+    total: record.total,
+    dim_pct: record.dimPct,
+    level: record.level,
+    qbank_version: record.qbank,
+    user_info: record.user,
+  });
+  if (error) console.warn('[ATLAS] insert assessment 失败', error);
+}
+
+async function cloudUpsertCheckin(item){
+  if (!cloud.enabled) return;
+  const accountId = LS.get('cloud_account_id', null);
+  if (!accountId) return;
+  const phone = (getAccount() || {}).phone;
+  const { error } = await cloud.sb.from('checkins').upsert({
+    account_id: accountId, phone,
+    date: item.date, what: item.what,
+    tools: item.tools || [], reflect: item.reflect || null,
+  }, { onConflict:'account_id,date' });
+  if (error) console.warn('[ATLAS] upsert checkin 失败', error);
+}
+
+async function cloudInsertReview(item){
+  if (!cloud.enabled) return;
+  const accountId = LS.get('cloud_account_id', null);
+  if (!accountId) return;
+  const phone = (getAccount() || {}).phone;
+  const { error } = await cloud.sb.from('reviews').upsert({
+    account_id: accountId, phone,
+    week_key: item.week, date: item.date,
+    win: item.win || null, fail: item.fail || null, next_plan: item.next || null,
+  }, { onConflict:'account_id,week_key' });
+  if (error) console.warn('[ATLAS] upsert review 失败', error);
+}
+
+// 启动时一次性把本地数据回填到云(仅注册用户)
+async function cloudBackfillFromLocal(){
+  if (!cloud.enabled || !window.ATLAS_AUTO_BACKFILL) return;
+  if (LS.get('synced_at', null)) return;          // 已同步过,跳过
+  const account = getAccount();
+  if (!account) return;
+  console.info('[ATLAS] 检测到本地数据未同步,执行一次性回填...');
+  const id = await cloudUpsertAccount(account);
+  if (!id) return;
+  for (const h of LS.get('history', [])){
+    await cloudInsertAssessment(h);
+  }
+  for (const c of LS.get('checkins', [])){
+    await cloudUpsertCheckin(c);
+  }
+  for (const r of LS.get('reviews', [])){
+    await cloudInsertReview(r);
+  }
+  LS.set('synced_at', new Date().toISOString());
+  console.info('[ATLAS] 回填完成');
+}
+
+// 钩子:用 wrapper 包住原函数,云端失败也不影响本地
+const _origSubmitRegister = submitRegister;
+submitRegister = function(){
+  _origSubmitRegister();
+  setTimeout(async () => {
+    const a = getAccount(); if (a){ await cloudUpsertAccount(a); }
+  }, 50);
+};
+
+const _origShowResult2 = showResult;
+showResult = function(){
+  _origShowResult2();
+  const history = LS.get('history', []);
+  const last = history[history.length - 1];
+  if (last) setTimeout(() => cloudInsertAssessment(last), 50);
+};
+
+const _origSubmitCheckinCloud = submitCheckin;
+submitCheckin = function(){
+  _origSubmitCheckinCloud();
+  const today = todayKey();
+  const checkins = LS.get('checkins', []);
+  const item = checkins.find(c => c.date === today);
+  if (item) setTimeout(() => cloudUpsertCheckin(item), 50);
+};
+
+const _origSubmitReview = submitReview;
+submitReview = function(){
+  _origSubmitReview();
+  const reviews = LS.get('reviews', []);
+  const last = reviews[reviews.length - 1];
+  if (last) setTimeout(() => cloudInsertReview(last), 50);
+};
+
+// 尝试拉取云端 active 题库覆盖本地(若云端版本不一致)
+async function cloudLoadQbank(){
+  if (!cloud.enabled) return;
+  const { data, error } = await cloud.sb.from('qbank_versions').select('*').eq('is_active', true).single();
+  if (error || !data) return;
+  if (data.version === QBANK_VERSION) return;     // 一致跳过
+  console.info(`[ATLAS] 云端题库 ${data.version} 不同于本地 ${QBANK_VERSION},加载云端版本`);
+  if (Array.isArray(data.questions) && data.questions.length){
+    QS.length = 0; QS.push(...data.questions);
+    QBANK_VERSION = data.version;
+    QBANK_UPDATED = data.updated_at;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  启动
+// ══════════════════════════════════════════════════════
+(function init(){
+  const savedUser = LS.get('user', null);
+  if (savedUser){
+    user = savedUser;
+    ['f-name','f-industry','f-goal'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.tagName === 'INPUT') el.value = savedUser.name || '';
+      else el.value = savedUser[id.replace('f-','')] || '';
+    });
+  }
+  renderAccountChip();
+  initSpriteDrag();
+  // 异步:回填 + 拉取云端题库,不阻塞 UI
+  cloudBackfillFromLocal();
+  cloudLoadQbank();
+})();
 </script>
 </body>
 </html>

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATLAS · 教练后台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=Cormorant+Garamond:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="admin-config.js" onerror="alert('admin-config.js 未配置,见 SUPABASE_SETUP.md');"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --c1:#0A1A2E;--c1d:#06111F;--c2:#1A3A5C;
+  --c3:#EDE7DA;--c4:#F5F1E8;
+  --gold:#B8923C;--gold2:#D4B062;--gold3:#8C6E2E;
+  --seal:#9C3225;--ink:#1A1410;--muted:#7A6E5C;
+  --border:#D8CFB8;--wh:#fff;
+  --serif:'Noto Serif SC',Georgia,serif;
+  --sans:'Noto Sans SC','PingFang SC',sans-serif;
+  --latin:'Cormorant Garamond','Noto Serif SC',Georgia,serif;
+}
+body{font-family:var(--sans);background:var(--c4);color:var(--ink);min-height:100vh;font-weight:400;letter-spacing:.02em}
+
+/* Login */
+.login-mask{position:fixed;inset:0;background:var(--c1d);display:flex;align-items:center;justify-content:center;z-index:1000}
+.login-box{background:#fff;padding:56px 48px;width:100%;max-width:420px;border:1px solid var(--gold);text-align:center}
+.login-box h1{font-family:var(--latin);font-size:32px;color:var(--c1);letter-spacing:.5em;margin-bottom:8px}
+.login-box .sub{font-size:11px;color:var(--muted);letter-spacing:.35em;margin-bottom:36px}
+.login-box input{width:100%;padding:14px 0;border:none;border-bottom:1px solid var(--border);font-size:15px;outline:none;text-align:center;font-family:var(--sans);background:transparent}
+.login-box input:focus{border-bottom-color:var(--gold)}
+.login-box button{margin-top:24px;width:100%;padding:14px;background:var(--c1);color:#fff;border:none;cursor:pointer;letter-spacing:.3em;font-size:13px}
+.login-box button:hover{background:var(--gold)}
+.login-box .err{color:var(--seal);font-size:12px;margin-top:14px;letter-spacing:.05em;min-height:18px}
+
+/* Layout */
+nav{background:var(--c1d);height:64px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(184,146,60,.25)}
+.logo{color:#fff;font-family:var(--latin);font-size:22px;font-weight:600;letter-spacing:8px;display:flex;align-items:center;gap:14px}
+.logo::before{content:'';display:inline-block;width:22px;height:22px;background:var(--seal);border-radius:2px}
+.logo small{font-size:11px;letter-spacing:.4em;color:var(--gold2);font-family:var(--sans);font-weight:300}
+.nav-tabs{display:flex;gap:0;height:100%}
+.nav-tab{color:rgba(255,255,255,.6);font-size:12px;padding:0 24px;cursor:pointer;letter-spacing:.25em;height:100%;display:flex;align-items:center;transition:color .2s;font-weight:300}
+.nav-tab:hover{color:#fff}
+.nav-tab.active{color:var(--gold2);position:relative}
+.nav-tab.active::after{content:'';position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:24px;height:1px;background:var(--gold2)}
+.nav-right{color:rgba(255,255,255,.5);font-size:11px;letter-spacing:.2em}
+
+main{max-width:1280px;margin:0 auto;padding:48px 32px 80px}
+.page-h{font-family:var(--serif);font-size:30px;color:var(--c1);font-weight:500;letter-spacing:.08em;margin-bottom:8px}
+.page-h::after{content:'';display:block;width:36px;height:1px;background:var(--gold);margin-top:18px;margin-bottom:32px}
+.page-sub{font-size:13px;color:var(--muted);letter-spacing:.05em;font-weight:300;margin-bottom:36px;margin-top:-18px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0;border:1px solid var(--border);background:#fff;margin-bottom:36px}
+.stat{padding:28px 24px;border-left:1px solid var(--border);text-align:center}
+.stat:first-child{border-left:none}
+.stat .num{font-family:var(--latin);font-size:42px;font-weight:500;color:var(--c1);line-height:1}
+.stat .lbl{font-size:11px;color:var(--muted);letter-spacing:.3em;margin-top:10px}
+
+/* Table */
+.tbl-wrap{background:#fff;border:1px solid var(--border);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--c1)}
+thead th{padding:16px 18px;color:var(--gold2);text-align:left;font-weight:400;letter-spacing:.2em;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--gold)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s;cursor:pointer}
+tbody tr:hover{background:rgba(184,146,60,.05)}
+tbody td{padding:18px;color:var(--ink);font-weight:300;letter-spacing:.03em}
+tbody td.num{font-family:var(--latin);font-weight:500;color:var(--c1);font-size:16px}
+.tier-chip{display:inline-block;padding:3px 10px;border:1px solid var(--border);font-size:11px;letter-spacing:.15em;color:var(--muted)}
+.tier-chip.paid{border-color:var(--gold);color:var(--gold);background:rgba(184,146,60,.06)}
+.empty{padding:64px;text-align:center;color:var(--muted);font-size:13px;letter-spacing:.1em}
+
+/* Drawer */
+.drawer-mask{position:fixed;inset:0;background:rgba(10,17,31,.6);display:none;z-index:200;backdrop-filter:blur(3px)}
+.drawer-mask.open{display:block}
+.drawer{position:fixed;right:0;top:0;bottom:0;width:min(640px,100%);background:var(--c4);transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);z-index:201;overflow-y:auto;border-left:1px solid var(--gold)}
+.drawer.open{transform:none}
+.drawer-head{background:var(--c1d);padding:32px 36px;color:#fff;border-bottom:1px solid rgba(184,146,60,.3)}
+.drawer-head .name{font-family:var(--serif);font-size:24px;font-weight:500;letter-spacing:.08em;margin-bottom:6px}
+.drawer-head .meta{font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.15em}
+.drawer-close{position:absolute;right:24px;top:24px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;font-family:var(--serif);font-weight:300;opacity:.6}
+.drawer-close:hover{opacity:1}
+.drawer-body{padding:32px 36px}
+.drawer-sec{margin-bottom:36px}
+.drawer-sec-title{font-family:var(--serif);font-size:11px;color:var(--c1);letter-spacing:.4em;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);text-transform:uppercase}
+
+.timeline-item{padding:14px 0;border-bottom:1px solid var(--border)}
+.timeline-item:last-child{border:none}
+.timeline-item .date{font-family:var(--latin);font-size:12px;color:var(--gold);letter-spacing:.2em;margin-bottom:6px}
+.timeline-item .body{font-size:13px;color:var(--ink);line-height:1.85;font-weight:300}
+.timeline-item .reflect{font-size:12px;color:var(--muted);margin-top:6px;font-style:italic}
+.timeline-item .tools{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.timeline-item .tool{font-family:var(--latin);font-size:11px;padding:2px 8px;border:1px solid var(--border);color:var(--gold3);letter-spacing:.1em}
+
+.review-item .label{font-family:var(--serif);font-weight:500;color:var(--c1);font-size:12px;display:inline-block;margin-right:6px}
+.review-item p{margin-top:4px;font-size:13px;line-height:1.8;color:var(--ink);font-weight:300}
+
+.coach-note{margin-top:14px;padding:14px;background:#fff;border:1px solid var(--gold);}
+.coach-note textarea{width:100%;border:none;outline:none;background:transparent;font-family:var(--sans);font-size:13px;line-height:1.8;min-height:60px;resize:vertical}
+.coach-note .save{margin-top:8px;padding:6px 16px;background:var(--c1);color:#fff;border:none;cursor:pointer;font-size:11px;letter-spacing:.2em}
+.coach-note .save:hover{background:var(--gold)}
+
+.assess-row{display:flex;gap:24px;align-items:baseline;padding:12px 0;border-bottom:1px solid var(--border)}
+.assess-row .score{font-family:var(--latin);font-size:32px;font-weight:500;color:var(--c1);min-width:80px}
+.assess-row .level{font-family:var(--serif);color:var(--gold)}
+.assess-row .date{margin-left:auto;font-family:var(--latin);font-size:12px;color:var(--muted);letter-spacing:.15em}
+
+/* qbank tab */
+.qbank-list{display:flex;flex-direction:column;gap:0;background:#fff;border:1px solid var(--border)}
+.qbank-row{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border)}
+.qbank-row:last-child{border:none}
+.qbank-ver{font-family:var(--latin);font-size:18px;color:var(--c1);font-weight:500;letter-spacing:.1em}
+.qbank-info{font-size:12px;color:var(--muted);margin-left:18px;letter-spacing:.05em}
+.qbank-active{color:var(--gold);font-weight:500;letter-spacing:.2em;font-size:11px;padding:4px 12px;border:1px solid var(--gold)}
+.qbank-act{background:transparent;border:1px solid var(--border);padding:6px 16px;font-size:11px;cursor:pointer;letter-spacing:.15em;color:var(--ink)}
+.qbank-act:hover{border-color:var(--gold);color:var(--gold)}
+
+@media(max-width:768px){
+  main{padding:24px 16px}
+  .drawer{width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ 登录 ════════════════════ -->
+<div class="login-mask" id="login-mask">
+  <div class="login-box">
+    <h1>ATLAS</h1>
+    <div class="sub">COACH · CONSOLE</div>
+    <input type="password" id="login-pw" placeholder="请输入访问密码" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button onclick="doLogin()">进入</button>
+    <div class="err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ════════════════════ 主界面 ════════════════════ -->
+<div id="app" style="display:none">
+  <nav>
+    <div class="logo">ATLAS <small>COACH</small></div>
+    <div class="nav-tabs">
+      <div class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">学员总览</div>
+      <div class="nav-tab" data-tab="qbank" onclick="switchTab('qbank')">题库管理</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="nav-right" id="nav-now">—</div>
+      <button onclick="refreshData()" title="刷新数据" style="background:transparent;border:1px solid rgba(184,146,60,.4);color:var(--gold2);padding:6px 14px;font-size:11px;letter-spacing:.2em;cursor:pointer;font-family:var(--sans)">刷新</button>
+      <button onclick="doLogout()" title="退出登录" style="background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);padding:6px 14px;font-size:11px;letter-spacing:.2em;cursor:pointer;font-family:var(--sans)">退出</button>
+    </div>
+  </nav>
+
+  <main>
+    <!-- 学员总览 -->
+    <div id="tab-dashboard">
+      <div class="page-h">学员总览</div>
+      <div class="page-sub">所有注册学员的实时数据,点击查看详情与历次打卡复盘</div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>学员</th>
+            <th>手机/微信</th>
+            <th>最近诊断</th>
+            <th>打卡</th>
+            <th>复盘</th>
+            <th>身份</th>
+            <th>最近活跃</th>
+          </tr></thead>
+          <tbody id="acc-tbody"><tr><td colspan="7" class="empty">加载中...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 题库管理 -->
+    <div id="tab-qbank" style="display:none">
+      <div class="page-h">题库管理</div>
+      <div class="page-sub">切换激活版本 · 查看历史归档 · 月度更新走 scripts/bump-qbank.mjs</div>
+      <div class="qbank-list" id="qbank-list"><div class="empty">加载中...</div></div>
+    </div>
+  </main>
+</div>
+
+<!-- ════════════════════ 学员详情抽屉 ════════════════════ -->
+<div class="drawer-mask" id="drawer-mask" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <button class="drawer-close" onclick="closeDrawer()">×</button>
+  <div class="drawer-head">
+    <div class="name" id="d-name">—</div>
+    <div class="meta" id="d-meta">—</div>
+  </div>
+  <div class="drawer-body" id="d-body">加载中...</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  登录(Supabase Auth, 2026 安全架构)
+// ══════════════════════════════════════════════════════
+let sb = null;
+function initSB(){
+  if (sb) return sb;
+  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY){
+    alert('admin-config.js 未配置 Supabase URL / Publishable key'); return null;
+  }
+  sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+    auth: { persistSession:true, storageKey:'atlas_admin_session', autoRefreshToken:true }
+  });
+  return sb;
+}
+
+function getSB(){ return sb || initSB(); }
+
+async function doLogin(){
+  const pw = document.getElementById('login-pw').value;
+  const err = document.getElementById('login-err');
+  if (!pw){ err.textContent = '请输入密码'; return; }
+  const client = initSB(); if (!client) return;
+  err.textContent = '登录中...';
+  const { data, error } = await client.auth.signInWithPassword({
+    email: window.ADMIN_EMAIL,
+    password: pw,
+  });
+  if (error){
+    err.textContent = `登录失败:${error.message}`;
+    console.error('[ATLAS Admin] auth error', error);
+    return;
+  }
+  console.log('[ATLAS Admin] 登录成功', data.user.email);
+  enterApp();
+}
+
+async function enterApp(){
+  document.getElementById('login-mask').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('nav-now').textContent = new Date().toISOString().slice(0,10).replace(/-/g,' · ');
+  initData();
+}
+
+// 检查现有 session
+async function checkSession(){
+  const client = initSB(); if (!client) return false;
+  const { data: { session } } = await client.auth.getSession();
+  return !!session;
+}
+
+// ══════════════════════════════════════════════════════
+//  数据加载
+// ══════════════════════════════════════════════════════
+let allAccounts = [];
+
+async function initData(){
+  const sb = getSB(); if (!sb) return;
+  const tbody = document.getElementById('acc-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" class="empty">从 Supabase 拉取中...</td></tr>';
+
+  // 4 个表分别查,任何一个错都单独显示
+  const queries = await Promise.all([
+    sb.from('accounts').select('*').order('created_at', { ascending:false }),
+    sb.from('assessments').select('*').order('taken_at', { ascending:false }),
+    sb.from('checkins').select('*').order('date', { ascending:false }),
+    sb.from('reviews').select('*').order('created_at', { ascending:false }),
+  ]);
+  const names = ['accounts','assessments','checkins','reviews'];
+  const errs = queries.map((q,i) => q.error ? `${names[i]}: ${q.error.message}` : null).filter(Boolean);
+  if (errs.length){
+    console.error('[ATLAS Admin] Supabase 查询错误', queries);
+    tbody.innerHTML = `<tr><td colspan="7" class="empty" style="color:var(--seal);text-align:left;padding:24px;line-height:2">
+      <b>查询失败,请打开 F12 控制台看详细信息:</b><br>${errs.join('<br>')}
+      <br><br><small>可能原因:<br>1. 已被登出(右上角"退出"重新登录)<br>2. RLS 策略未生效(联系开发)<br>3. CDN/网络问题</small>
+    </td></tr>`;
+    return;
+  }
+  const accounts = queries[0].data || [];
+  const assessments = queries[1].data || [];
+  const checkins = queries[2].data || [];
+  const reviews = queries[3].data || [];
+  console.log(`[ATLAS Admin] 加载 ${accounts.length} 账户 / ${assessments.length} 测评 / ${checkins.length} 打卡 / ${reviews.length} 复盘`);
+
+  // 按 account_id 聚合
+  const byId = {};
+  accounts.forEach(a => { byId[a.id] = { ...a, assessments:[], checkins:[], reviews:[] }; });
+  assessments.forEach(x => { if (byId[x.account_id]) byId[x.account_id].assessments.push(x); });
+  checkins.forEach(x => { if (byId[x.account_id]) byId[x.account_id].checkins.push(x); });
+  reviews.forEach(x => { if (byId[x.account_id]) byId[x.account_id].reviews.push(x); });
+
+  allAccounts = Object.values(byId);
+  renderStats(accounts, assessments, checkins, reviews);
+  renderAccTable();
+}
+
+function refreshData(){
+  console.log('[ATLAS Admin] 手动刷新');
+  initData();
+}
+
+async function doLogout(){
+  if (!confirm('退出 ATLAS 教练后台?')) return;
+  try { await getSB()?.auth.signOut(); } catch(e){}
+  location.reload();
+}
+
+function renderStats(accts, ass, cis, revs){
+  const html = `
+    <div class="stat"><div class="num">${accts.length}</div><div class="lbl">注 册 学 员</div></div>
+    <div class="stat"><div class="num">${ass.length}</div><div class="lbl">诊 断 次 数</div></div>
+    <div class="stat"><div class="num">${cis.length}</div><div class="lbl">打 卡 总 数</div></div>
+    <div class="stat"><div class="num">${revs.length}</div><div class="lbl">复 盘 总 数</div></div>
+    <div class="stat"><div class="num">${accts.filter(a => a.tier && a.tier !== 'free').length}</div><div class="lbl">付 费 学 员</div></div>
+  `;
+  document.getElementById('stats').innerHTML = html;
+}
+
+function renderAccTable(){
+  const tbody = document.getElementById('acc-tbody');
+  if (!allAccounts.length){
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">还没有注册学员</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allAccounts.map(a => {
+    const last = a.assessments[0];
+    const tier = (a.tier || 'free').toLowerCase();
+    return `
+      <tr onclick="openDrawer('${a.id}')">
+        <td><b>${esc(a.name)}</b></td>
+        <td>${esc(a.phone)}</td>
+        <td class="num">${last ? last.total : '—'}</td>
+        <td class="num">${a.checkins.length}</td>
+        <td class="num">${a.reviews.length}</td>
+        <td><span class="tier-chip ${tier!=='free'?'paid':''}">${tier.toUpperCase()}</span></td>
+        <td>${fmtDate(a.last_seen_at)}</td>
+      </tr>`;
+  }).join('');
+}
+
+function fmtDate(s){
+  if (!s) return '—';
+  const d = new Date(s);
+  const diff = (Date.now() - d.getTime()) / 86400000;
+  if (diff < 1) return '今日';
+  if (diff < 2) return '昨日';
+  if (diff < 30) return `${Math.floor(diff)} 天前`;
+  return d.toISOString().slice(0,10);
+}
+
+function esc(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ══════════════════════════════════════════════════════
+//  抽屉(学员详情)
+// ══════════════════════════════════════════════════════
+function openDrawer(id){
+  const a = allAccounts.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('d-name').textContent = a.name;
+  document.getElementById('d-meta').textContent =
+    `${a.phone} · ${a.industry || '未填行业'} · 注册于 ${a.created_at.slice(0,10)}`;
+
+  const checkinsHtml = a.checkins.length
+    ? a.checkins.slice(0, 30).map(c => `
+        <div class="timeline-item">
+          <div class="date">${c.date}</div>
+          <div class="body">${esc(c.what || '')}</div>
+          ${c.reflect ? `<div class="reflect">💭 ${esc(c.reflect)}</div>` : ''}
+          ${(c.tools||[]).length ? `<div class="tools">${c.tools.map(t=>`<span class="tool">${esc(t)}</span>`).join('')}</div>` : ''}
+        </div>`).join('')
+    : '<div class="empty">还没有打卡记录</div>';
+
+  const reviewsHtml = a.reviews.length
+    ? a.reviews.map(r => `
+        <div class="timeline-item review-item">
+          <div class="date">${r.week_key} · ${r.date}</div>
+          ${r.win ? `<p><span class="label">🎯 收获</span>${esc(r.win)}</p>` : ''}
+          ${r.fail ? `<p><span class="label">⚠ 失败</span>${esc(r.fail)}</p>` : ''}
+          ${r.next_plan ? `<p><span class="label">🚀 下周</span>${esc(r.next_plan)}</p>` : ''}
+          <div class="coach-note">
+            <textarea id="cn-${r.id}" placeholder="教练点评(仅你可见)...">${esc(r.coach_note || '')}</textarea>
+            <button class="save" onclick="saveCoachNote('${r.id}')">保存点评</button>
+          </div>
+        </div>`).join('')
+    : '<div class="empty">还没有复盘记录</div>';
+
+  const assessHtml = a.assessments.length
+    ? a.assessments.map(x => `
+        <div class="assess-row">
+          <span class="score">${x.total}</span>
+          <span class="level">${x.level}</span>
+          <span class="date">${x.taken_at.slice(0,10)} · v${x.qbank_version || '—'}</span>
+        </div>`).join('')
+    : '<div class="empty">还没有测评记录</div>';
+
+  document.getElementById('d-body').innerHTML = `
+    <div class="drawer-sec">
+      <div class="drawer-sec-title">教练备注</div>
+      <div class="coach-note">
+        <textarea id="acc-note" placeholder="对该学员的备注、跟进、付费意向...">${esc(a.coach_note || '')}</textarea>
+        <button class="save" onclick="saveAccountNote('${a.id}')">保存备注</button>
+      </div>
+    </div>
+    <div class="drawer-sec">
+      <div class="drawer-sec-title">诊断记录 · ${a.assessments.length} 次</div>
+      ${assessHtml}
+    </div>
+    <div class="drawer-sec">
+      <div class="drawer-sec-title">每周复盘 · ${a.reviews.length} 条</div>
+      ${reviewsHtml}
+    </div>
+    <div class="drawer-sec">
+      <div class="drawer-sec-title">每日打卡 · ${a.checkins.length} 条</div>
+      ${checkinsHtml}
+    </div>
+  `;
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-mask').classList.add('open');
+}
+
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-mask').classList.remove('open');
+}
+
+async function saveAccountNote(id){
+  const txt = document.getElementById('acc-note').value;
+  const { error } = await getSB().from('accounts').update({ coach_note: txt }).eq('id', id);
+  if (error){ alert('保存失败:'+error.message); return; }
+  alert('备注已保存');
+  const a = allAccounts.find(x => x.id === id); if (a) a.coach_note = txt;
+}
+
+async function saveCoachNote(id){
+  const txt = document.getElementById('cn-'+id).value;
+  const { error } = await getSB().from('reviews').update({ coach_note: txt }).eq('id', id);
+  if (error){ alert('保存失败:'+error.message); return; }
+  alert('点评已保存');
+}
+
+// ══════════════════════════════════════════════════════
+//  Tabs
+// ══════════════════════════════════════════════════════
+function switchTab(name){
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.getElementById('tab-dashboard').style.display = name === 'dashboard' ? '' : 'none';
+  document.getElementById('tab-qbank').style.display = name === 'qbank' ? '' : 'none';
+  if (name === 'qbank') loadQbanks();
+}
+
+async function loadQbanks(){
+  const { data } = await getSB().from('qbank_versions').select('*').order('updated_at', { ascending:false });
+  const list = document.getElementById('qbank-list');
+  if (!data || !data.length){
+    list.innerHTML = '<div class="empty">尚无题库记录,请在 SQL Editor 执行 supabase/seed-qbank.sql</div>';
+    return;
+  }
+  list.innerHTML = data.map(q => `
+    <div class="qbank-row">
+      <div>
+        <span class="qbank-ver">${q.version}</span>
+        <span class="qbank-info">${q.updated_at} · ${q.questions.length} 题</span>
+      </div>
+      ${q.is_active
+        ? '<span class="qbank-active">当前激活</span>'
+        : `<button class="qbank-act" onclick="activateQbank('${q.version}')">设为激活</button>`}
+    </div>`).join('');
+}
+
+async function activateQbank(version){
+  if (!confirm(`确定切换到题库 ${version}?所有学员下次访问会看到新版`)) return;
+  const sb = getSB();
+  // 先全部置 false,再激活目标
+  await sb.from('qbank_versions').update({ is_active:false }).neq('version', '__never__');
+  const { error } = await sb.from('qbank_versions').update({ is_active:true }).eq('version', version);
+  if (error){ alert('切换失败:'+error.message); return; }
+  alert(`✓ 已激活 ${version}`);
+  loadQbanks();
+}
+
+// 启动:检测已有 session
+(async function(){
+  if (await checkSession()) enterApp();
+  else document.getElementById('login-pw').focus();
+})();
+</script>
+</body>
+</html>

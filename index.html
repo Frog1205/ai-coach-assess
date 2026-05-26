@@ -1258,6 +1258,7 @@ showResult = function() {
     total, dimPct,
     level: level.name,
     qbank: QBANK_VERSION,   // 记录题库版本,便于跨版本对比时标注
+    ans: ans.slice(),       // 每题答案索引快照,管理端用于答题明细分析
   });
   LS.set('history', history);
   LS.set('user', user);
@@ -1797,6 +1798,7 @@ async function cloudInsertAssessment(record){
     level: record.level,
     qbank_version: record.qbank,
     user_info: record.user,
+    answers: record.ans || null,
   });
   if (error) console.warn('[ATLAS] insert assessment 失败', error);
 }

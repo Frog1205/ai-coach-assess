@@ -8,6 +8,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=Cormorant+Garamond:wght@500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="admin-config.js" onerror="alert('admin-config.js 未配置,见 SUPABASE_SETUP.md');"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -116,6 +120,17 @@ tbody td.num{font-family:var(--latin);font-weight:500;color:var(--c1);font-size:
 .qbank-act{background:transparent;border:1px solid var(--border);padding:6px 16px;font-size:11px;cursor:pointer;letter-spacing:.15em;color:var(--ink)}
 .qbank-act:hover{border-color:var(--gold);color:var(--gold)}
 
+/* Export toolbar */
+.export-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;align-items:center}
+.export-bar .lbl{font-size:11px;color:var(--muted);letter-spacing:.3em;margin-right:4px}
+.export-btn{background:#fff;border:1px solid var(--gold);color:var(--gold3);padding:8px 18px;font-size:12px;letter-spacing:.2em;cursor:pointer;font-family:var(--sans);transition:all .15s}
+.export-btn:hover{background:var(--gold);color:#fff}
+.export-btn:disabled{opacity:.4;cursor:wait}
+.export-btn.solid{background:var(--c1);color:#fff;border-color:var(--c1)}
+.export-btn.solid:hover{background:var(--gold);border-color:var(--gold)}
+.drawer-head .export-btn{margin-top:14px;background:transparent;color:var(--gold2);border-color:var(--gold2)}
+.drawer-head .export-btn:hover{background:var(--gold);color:var(--c1d);border-color:var(--gold)}
+
 @media(max-width:768px){
   main{padding:24px 16px}
   .drawer{width:100%}
@@ -158,6 +173,13 @@ tbody td.num{font-family:var(--latin);font-weight:500;color:var(--c1);font-size:
 
       <div class="stats" id="stats"></div>
 
+      <div class="export-bar">
+        <span class="lbl">导出</span>
+        <button class="export-btn solid" onclick="exportAllStudentsXLSX()">全员花名册 · Excel</button>
+        <button class="export-btn" onclick="exportPeriodXLSX('week')">本周活跃明细</button>
+        <button class="export-btn" onclick="exportPeriodXLSX('month')">本月活跃明细</button>
+      </div>
+
       <div class="tbl-wrap">
         <table>
           <thead><tr>
@@ -190,6 +212,7 @@ tbody td.num{font-family:var(--latin);font-weight:500;color:var(--c1);font-size:
   <div class="drawer-head">
     <div class="name" id="d-name">—</div>
     <div class="meta" id="d-meta">—</div>
+    <button class="export-btn" id="d-export-btn" onclick="exportStudentDocx()">导出该学员档案 · Word</button>
   </div>
   <div class="drawer-body" id="d-body">加载中...</div>
 </div>
@@ -349,9 +372,11 @@ function esc(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<'
 // ══════════════════════════════════════════════════════
 //  抽屉(学员详情)
 // ══════════════════════════════════════════════════════
+let currentDrawerId = null;
 function openDrawer(id){
   const a = allAccounts.find(x => x.id === id);
   if (!a) return;
+  currentDrawerId = id;
   document.getElementById('d-name').textContent = a.name;
   document.getElementById('d-meta').textContent =
     `${a.phone} · ${a.industry || '未填行业'} · 注册于 ${a.created_at.slice(0,10)}`;
@@ -472,6 +497,388 @@ async function activateQbank(version){
   if (error){ alert('切换失败:'+error.message); return; }
   alert(`✓ 已激活 ${version}`);
   loadQbanks();
+}
+
+// ══════════════════════════════════════════════════════
+//  导出 · Excel / Word
+// ══════════════════════════════════════════════════════
+function ymd(d){ return new Date(d).toISOString().slice(0,10); }
+function todayStamp(){ return new Date().toISOString().slice(0,10).replace(/-/g,''); }
+
+function periodStart(period){
+  const now = new Date();
+  if (period === 'week'){
+    // 本周一 00:00
+    const d = new Date(now);
+    const day = (d.getDay() + 6) % 7; // Mon=0
+    d.setDate(d.getDate() - day);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+  if (period === 'month'){
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+  return new Date(0);
+}
+
+function exportAllStudentsXLSX(){
+  if (!allAccounts.length){ alert('暂无学员数据'); return; }
+  const rows = allAccounts.map(a => {
+    const last = a.assessments[0] || {};
+    return {
+      '姓名': a.name || '',
+      '手机/微信': a.phone || '',
+      '行业': a.industry || '',
+      '身份/付费': (a.tier || 'free').toUpperCase(),
+      '注册日期': a.created_at ? a.created_at.slice(0,10) : '',
+      '最近活跃': a.last_seen_at ? a.last_seen_at.slice(0,10) : '',
+      '诊断次数': a.assessments.length,
+      '最近诊断分数': last.total ?? '',
+      '最近诊断层级': last.level || '',
+      '最近诊断日期': last.taken_at ? last.taken_at.slice(0,10) : '',
+      '题库版本': last.qbank_version || '',
+      '打卡总数': a.checkins.length,
+      '复盘总数': a.reviews.length,
+      '教练备注': a.coach_note || ''
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    {wch:12},{wch:18},{wch:14},{wch:10},{wch:12},{wch:12},
+    {wch:8},{wch:12},{wch:14},{wch:12},{wch:10},{wch:8},{wch:8},{wch:40}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '全员花名册');
+  XLSX.writeFile(wb, `ATLAS_全员花名册_${todayStamp()}.xlsx`);
+}
+
+function exportPeriodXLSX(period){
+  const since = periodStart(period);
+  const sinceMs = since.getTime();
+  const label = period === 'week' ? '本周' : '本月';
+
+  const newRegs = [];
+  const newAssess = [];
+  const newCheckins = [];
+  const newReviews = [];
+
+  allAccounts.forEach(a => {
+    if (a.created_at && new Date(a.created_at).getTime() >= sinceMs){
+      newRegs.push({
+        '姓名': a.name || '',
+        '手机/微信': a.phone || '',
+        '行业': a.industry || '',
+        '身份': (a.tier || 'free').toUpperCase(),
+        '注册时间': a.created_at.slice(0,16).replace('T',' ')
+      });
+    }
+    a.assessments.forEach(x => {
+      if (x.taken_at && new Date(x.taken_at).getTime() >= sinceMs){
+        newAssess.push({
+          '姓名': a.name || '',
+          '手机/微信': a.phone || '',
+          '诊断时间': x.taken_at.slice(0,16).replace('T',' '),
+          '总分': x.total ?? '',
+          '层级': x.level || '',
+          '题库版本': x.qbank_version || ''
+        });
+      }
+    });
+    a.checkins.forEach(c => {
+      if (c.date && new Date(c.date).getTime() >= sinceMs){
+        newCheckins.push({
+          '姓名': a.name || '',
+          '日期': c.date,
+          '做了什么': c.what || '',
+          '反思': c.reflect || '',
+          '工具': (c.tools || []).join(' / ')
+        });
+      }
+    });
+    a.reviews.forEach(r => {
+      const t = r.created_at || r.date;
+      if (t && new Date(t).getTime() >= sinceMs){
+        newReviews.push({
+          '姓名': a.name || '',
+          '周次': r.week_key || '',
+          '日期': r.date || (r.created_at || '').slice(0,10),
+          '🎯 收获': r.win || '',
+          '⚠ 失败': r.fail || '',
+          '🚀 下周': r.next_plan || '',
+          '教练点评': r.coach_note || ''
+        });
+      }
+    });
+  });
+
+  const total = newRegs.length + newAssess.length + newCheckins.length + newReviews.length;
+  if (!total){ alert(`${label}还没有新数据`); return; }
+
+  const wb = XLSX.utils.book_new();
+  const addSheet = (name, rows, cols) => {
+    if (!rows.length){
+      const ws = XLSX.utils.aoa_to_sheet([['(本期无数据)']]);
+      XLSX.utils.book_append_sheet(wb, ws, name);
+      return;
+    }
+    const ws = XLSX.utils.json_to_sheet(rows);
+    if (cols) ws['!cols'] = cols;
+    XLSX.utils.book_append_sheet(wb, ws, name);
+  };
+  addSheet('新注册', newRegs, [{wch:12},{wch:18},{wch:14},{wch:10},{wch:18}]);
+  addSheet('新诊断', newAssess, [{wch:12},{wch:18},{wch:18},{wch:8},{wch:14},{wch:10}]);
+  addSheet('新打卡', newCheckins, [{wch:12},{wch:12},{wch:50},{wch:40},{wch:20}]);
+  addSheet('新复盘', newReviews, [{wch:12},{wch:10},{wch:12},{wch:40},{wch:40},{wch:40},{wch:40}]);
+
+  XLSX.writeFile(wb, `ATLAS_${label}活跃明细_${todayStamp()}.xlsx`);
+}
+
+// 五维 / 段位 / 方案 镜像(与学员端 index.html 保持一致，仅用于报告排版)
+const ATLAS_DIMS = ['工具认知', '提示词能力', '内容创作', '自动化思维', '工作流整合'];
+const ATLAS_DIM_COLORS = ['#1A4D8C','#0F9D6E','#C9A14A','#6C3ABF','#C0392B'];
+const ATLAS_LEVEL_TO_PLAN = { '观望者':'A','入局者':'B','实战派':'B','破局者':'C','宗师':'C' };
+const ATLAS_PLANS = {
+  A:{ name:'ATLAS · Foundation', dur:'3-4 周', focus:'认知框架与个人工作流',     feats:['1v1 定制学习路径','行业垂直提示词资产库','每周 1 次 1v1 视频复盘','全套工具配置与账号策略'] },
+  B:{ name:'ATLAS · Prime',      dur:'6-8 周', focus:'深度业务介入 + Agent 部署', feats:['每日 30 分钟语音/视频 1v1','直接参与真实业务任务','Agent 工具专属部署','个人 IP 内容矩阵规划'] },
+  C:{ name:'ATLAS · Apex',       dur:'10-12 周', focus:'战略级 AI + 组织落地',    feats:['每周 2 次深度 1v1','10 篇行业旗舰内容共创','组织级 AI 转型咨询','结营后 3 个月顾问跟进'] }
+};
+
+async function renderChartPng(config, w, h){
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.style.cssText = 'position:fixed;left:-99999px;top:0';
+  document.body.appendChild(canvas);
+  config.options = config.options || {};
+  config.options.animation = false;
+  config.options.responsive = false;
+  config.options.devicePixelRatio = 2;
+  const chart = new Chart(canvas.getContext('2d'), config);
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const dataUrl = canvas.toDataURL('image/png');
+  chart.destroy();
+  canvas.remove();
+  const bin = atob(dataUrl.split(',')[1]);
+  const buf = new Uint8Array(bin.length);
+  for (let i=0;i<bin.length;i++) buf[i] = bin.charCodeAt(i);
+  return buf.buffer;
+}
+
+async function buildRadarPng(dimPct){
+  return renderChartPng({
+    type:'radar',
+    data:{
+      labels: ATLAS_DIMS,
+      datasets:[{
+        label:'本次五维战力',
+        data: dimPct,
+        backgroundColor:'rgba(184,146,60,0.25)',
+        borderColor:'#B8923C',
+        borderWidth:2,
+        pointBackgroundColor: ATLAS_DIM_COLORS,
+        pointRadius:5,
+        pointBorderColor:'#fff'
+      }]
+    },
+    options:{
+      plugins:{ legend:{ display:false }, title:{ display:true, text:'五维战力雷达图', font:{ size:18 }, color:'#0A1A2E' } },
+      scales:{ r:{
+        min:0, max:100,
+        ticks:{ stepSize:20, backdropColor:'transparent', color:'#7A6E5C', font:{ size:11 } },
+        pointLabels:{ font:{ size:14, weight:'600' }, color:'#0A1A2E' },
+        grid:{ color:'#D8CFB8' }, angleLines:{ color:'#D8CFB8' }
+      }}
+    }
+  }, 700, 560);
+}
+
+async function buildGrowthCurvePng(assessments){
+  const ordered = assessments.slice().reverse();
+  const labels = ordered.map(x => (x.taken_at || '').slice(0,10));
+  return renderChartPng({
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'总分',
+        data: ordered.map(x => x.total),
+        borderColor:'#B8923C', backgroundColor:'rgba(184,146,60,0.15)',
+        borderWidth:2.5, tension:0.25, pointRadius:5, pointBackgroundColor:'#B8923C', fill:true
+      }]
+    },
+    options:{
+      plugins:{
+        legend:{ display:false },
+        title:{ display:true, text:'战力跃迁曲线（历次诊断总分）', font:{ size:16 }, color:'#0A1A2E' }
+      },
+      scales:{
+        y:{ min:0, max:100, ticks:{ stepSize:20, color:'#7A6E5C' }, grid:{ color:'#EDE7DA' } },
+        x:{ ticks:{ color:'#7A6E5C', font:{ size:10 }, maxRotation:30 }, grid:{ display:false } }
+      }
+    }
+  }, 820, 360);
+}
+
+async function exportStudentDocx(){
+  const id = currentDrawerId;
+  if (!id){ alert('未选中学员'); return; }
+  const a = allAccounts.find(x => x.id === id);
+  if (!a){ alert('找不到学员数据'); return; }
+  const btn = document.getElementById('d-export-btn');
+  if (btn){ btn.disabled = true; btn.textContent = '生成中...'; }
+
+  try {
+    const D = window.docx;
+    const { Document, Packer, Paragraph, HeadingLevel, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, ImageRun } = D;
+
+    const H = (t, lvl=HeadingLevel.HEADING_2) => new Paragraph({ heading: lvl, children:[new TextRun({ text: t, bold: true })] });
+    const P = (t, opts={}) => new Paragraph({ children:[new TextRun({ text: t || '', ...opts })] });
+    const meta = (k, v) => new Paragraph({ children: [
+      new TextRun({ text: k+'：', bold: true }), new TextRun({ text: String(v ?? '—') })
+    ]});
+
+    const tableCell = txt => new TableCell({
+      children:[new Paragraph({ children:[new TextRun({ text: String(txt ?? ''), size: 20 })] })],
+      margins:{top:80,bottom:80,left:120,right:120}
+    });
+    const buildTable = (headers, rows) => {
+      const headerRow = new TableRow({ tableHeader:true, children: headers.map(h => new TableCell({
+        children:[new Paragraph({ children:[new TextRun({ text: h, bold:true, size: 20 })] })],
+        shading:{ fill:'EDE7DA' }, margins:{top:80,bottom:80,left:120,right:120}
+      })) });
+      const bodyRows = rows.length ? rows.map(r => new TableRow({ children: r.map(tableCell) }))
+                                  : [ new TableRow({ children:[ new TableCell({
+                                        columnSpan: headers.length,
+                                        children:[ P('（暂无记录）', {italics:true, color:'888888'}) ],
+                                        margins:{top:80,bottom:80,left:120,right:120}
+                                      }) ] }) ];
+      return new Table({ width:{ size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...bodyRows] });
+    };
+
+    const children = [];
+    children.push(new Paragraph({ alignment: AlignmentType.CENTER, children:[ new TextRun({ text:'ATLAS · 学员档案', bold:true, size: 40 }) ] }));
+    children.push(new Paragraph({ alignment: AlignmentType.CENTER, children:[ new TextRun({ text:`导出于 ${new Date().toISOString().slice(0,10)}`, size: 20, color:'888888' }) ] }));
+    children.push(P(''));
+
+    children.push(H('基本信息'));
+    children.push(meta('姓名', a.name));
+    children.push(meta('手机/微信', a.phone));
+    children.push(meta('行业', a.industry));
+    children.push(meta('身份', (a.tier || 'free').toUpperCase()));
+    children.push(meta('注册日期', a.created_at ? a.created_at.slice(0,10) : ''));
+    children.push(meta('最近活跃', a.last_seen_at ? a.last_seen_at.slice(0,10) : ''));
+    children.push(P(''));
+
+    children.push(H('教练备注'));
+    children.push(P(a.coach_note || '（暂无）'));
+    children.push(P(''));
+
+    // ── 五维战力雷达图 ──
+    const latest = a.assessments[0];
+    if (latest && Array.isArray(latest.dim_pct) && latest.dim_pct.length === 5){
+      children.push(H('五维战力雷达图'));
+      children.push(P(`最近一次诊断 · ${(latest.taken_at||'').slice(0,10)} · 总分 ${latest.total} · ${latest.level || '—'}`, { color:'888888' }));
+      try {
+        const radarBuf = await buildRadarPng(latest.dim_pct);
+        children.push(new Paragraph({ alignment: AlignmentType.CENTER, children:[
+          new ImageRun({ data: radarBuf, transformation:{ width: 420, height: 336 } })
+        ]}));
+        // 各维度分数列表
+        const dimRows = ATLAS_DIMS.map((name, i) => [name, latest.dim_pct[i] + ' 分']);
+        children.push(buildTable(['维度','本次分数'], dimRows));
+      } catch(e){
+        console.warn('[ATLAS Admin] 雷达图生成失败', e);
+        children.push(P('（雷达图生成失败：' + e.message + '）', { italics:true, color:'C0392B' }));
+      }
+      children.push(P(''));
+    } else if (a.assessments.length){
+      children.push(H('五维战力雷达图'));
+      children.push(P('（此诊断记录无五维明细数据，可能是早期版本）', { italics:true, color:'888888' }));
+      children.push(P(''));
+    }
+
+    // ── 学习地图 ──
+    children.push(H('学习地图'));
+    if (latest){
+      const recPlan = ATLAS_LEVEL_TO_PLAN[latest.level] || 'B';
+      const plan = ATLAS_PLANS[recPlan];
+      children.push(P(`当前段位：${latest.level || '—'}　·　推荐路径：${plan.name}（${plan.dur}）`, { bold:true }));
+      children.push(P(`聚焦：${plan.focus}`, { color:'8C6E2E' }));
+      children.push(P(''));
+      children.push(buildTable(
+        ['路径','周期','聚焦','是否推荐'],
+        ['A','B','C'].map(k => [
+          ATLAS_PLANS[k].name, ATLAS_PLANS[k].dur, ATLAS_PLANS[k].focus, k === recPlan ? '★ 推荐' : ''
+        ])
+      ));
+      children.push(P(''));
+      children.push(new Paragraph({ children:[new TextRun({ text:`${plan.name} · 核心交付`, bold:true })] }));
+      plan.feats.forEach(f => children.push(new Paragraph({
+        bullet:{ level:0 }, children:[new TextRun({ text: f, size: 22 })]
+      })));
+      children.push(P(''));
+    } else {
+      children.push(P('（该学员尚无诊断记录，无法生成学习地图）', { italics:true, color:'888888' }));
+      children.push(P(''));
+    }
+
+    // ── 战力跃迁曲线（2 次及以上诊断才有意义）──
+    if (a.assessments.length >= 2){
+      children.push(H('战力跃迁曲线'));
+      try {
+        const curveBuf = await buildGrowthCurvePng(a.assessments);
+        children.push(new Paragraph({ alignment: AlignmentType.CENTER, children:[
+          new ImageRun({ data: curveBuf, transformation:{ width: 540, height: 240 } })
+        ]}));
+      } catch(e){
+        console.warn('[ATLAS Admin] 跃迁曲线生成失败', e);
+        children.push(P('（曲线生成失败：' + e.message + '）', { italics:true, color:'C0392B' }));
+      }
+      children.push(P(''));
+    }
+
+    children.push(H(`诊断记录（共 ${a.assessments.length} 次）`));
+    children.push(buildTable(
+      ['日期','总分','层级','题库版本'],
+      a.assessments.map(x => [x.taken_at ? x.taken_at.slice(0,10) : '', x.total ?? '', x.level || '', x.qbank_version || ''])
+    ));
+    children.push(P(''));
+
+    children.push(H(`每周复盘（共 ${a.reviews.length} 条）`));
+    if (!a.reviews.length){
+      children.push(P('（暂无复盘）', { italics:true, color:'888888' }));
+    } else {
+      a.reviews.forEach(r => {
+        children.push(new Paragraph({ children:[ new TextRun({ text: `${r.week_key || ''} · ${r.date || (r.created_at||'').slice(0,10)}`, bold:true, color:'B8923C' }) ] }));
+        if (r.win) children.push(P('🎯 收获：' + r.win));
+        if (r.fail) children.push(P('⚠ 失败：' + r.fail));
+        if (r.next_plan) children.push(P('🚀 下周：' + r.next_plan));
+        if (r.coach_note) children.push(P('📝 教练点评：' + r.coach_note, { color:'8C6E2E' }));
+        children.push(P(''));
+      });
+    }
+
+    children.push(H(`每日打卡（共 ${a.checkins.length} 条）`));
+    children.push(buildTable(
+      ['日期','做了什么','反思','工具'],
+      a.checkins.slice(0, 200).map(c => [c.date || '', c.what || '', c.reflect || '', (c.tools||[]).join(' / ')])
+    ));
+    if (a.checkins.length > 200) children.push(P(`（仅显示最近 200 条，共 ${a.checkins.length} 条）`, { italics:true, color:'888888' }));
+
+    const doc = new Document({
+      creator:'ATLAS Coach Console',
+      title: `ATLAS_${a.name}_档案`,
+      sections:[{ properties:{}, children }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const safeName = (a.name || 'student').replace(/[\\/:*?"<>|]/g, '_');
+    saveAs(blob, `ATLAS_${safeName}_档案_${todayStamp()}.docx`);
+  } catch(e){
+    console.error('[ATLAS Admin] Word 导出失败', e);
+    alert('导出失败：' + e.message);
+  } finally {
+    if (btn){ btn.disabled = false; btn.textContent = '导出该学员档案 · Word'; }
+  }
 }
 
 // 启动:检测已有 session

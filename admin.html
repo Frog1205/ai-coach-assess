@@ -295,6 +295,7 @@ async function checkSession(){
 // ══════════════════════════════════════════════════════
 let allAccounts = [];
 let anonAssessments = [];
+let anonAccountsSynth = [];  // 把匿名诊断包成 account-like 对象，复用抽屉/Word 导出
 
 async function initData(){
   const sb = getSB(); if (!sb) return;
@@ -333,6 +334,24 @@ async function initData(){
 
   // 匿名诊断（account_id 为 null，未注册学员完成的问卷）
   anonAssessments = assessments.filter(x => !x.account_id);
+  anonAccountsSynth = anonAssessments.map(x => {
+    const u = x.user_info || {};
+    return {
+      id: 'anon::' + x.id,
+      __anon: true,
+      name: u.name || '（未填姓名）',
+      phone: x.phone || '—',
+      industry: u.industry || '',
+      goal: u.goal || '',
+      tier: 'anon',
+      coach_note: '',
+      created_at: x.taken_at,
+      last_seen_at: x.taken_at,
+      assessments: [x],
+      checkins: [],
+      reviews: []
+    };
+  });
 
   allAccounts = Object.values(byId);
   renderStats(accounts, assessments, checkins, reviews);
@@ -395,7 +414,7 @@ function renderAnonTable(){
   tbody.innerHTML = anonAssessments.map(x => {
     const u = x.user_info || {};
     return `
-      <tr style="cursor:default">
+      <tr onclick="openDrawer('anon::${x.id}')">
         <td><b>${esc(u.name || '—')}</b></td>
         <td>${esc(u.industry || '—')}</td>
         <td>${esc(u.goal || '—')}</td>
@@ -454,13 +473,17 @@ function esc(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<'
 //  抽屉(学员详情)
 // ══════════════════════════════════════════════════════
 let currentDrawerId = null;
+function findAccount(id){
+  return allAccounts.find(x => x.id === id) || anonAccountsSynth.find(x => x.id === id);
+}
 function openDrawer(id){
-  const a = allAccounts.find(x => x.id === id);
+  const a = findAccount(id);
   if (!a) return;
   currentDrawerId = id;
-  document.getElementById('d-name').textContent = a.name;
-  document.getElementById('d-meta').textContent =
-    `${a.phone} · ${a.industry || '未填行业'} · 注册于 ${a.created_at.slice(0,10)}`;
+  document.getElementById('d-name').textContent = a.name + (a.__anon ? '（匿名）' : '');
+  document.getElementById('d-meta').textContent = a.__anon
+    ? `匿名 · ${a.industry || '未填行业'} · 目标：${a.goal || '—'} · 诊断于 ${(a.created_at||'').slice(0,10)} · ${a.phone}`
+    : `${a.phone} · ${a.industry || '未填行业'} · 注册于 ${a.created_at.slice(0,10)}`;
 
   const checkinsHtml = a.checkins.length
     ? a.checkins.slice(0, 30).map(c => `
@@ -496,17 +519,31 @@ function openDrawer(id){
     : '<div class="empty">还没有测评记录</div>';
 
   document.getElementById('d-body').innerHTML = `
+    ${a.__anon ? `
+    <div class="drawer-sec">
+      <div class="drawer-sec-title">线索信息</div>
+      <p style="font-size:13px;line-height:1.9;color:var(--ink);font-weight:300">
+        <b>姓名：</b>${esc(a.name)}<br>
+        <b>行业：</b>${esc(a.industry || '—')}<br>
+        <b>目标：</b>${esc(a.goal || '—')}<br>
+        <b>匿名标识：</b><code style="font-family:var(--latin);color:var(--gold3)">${esc(a.phone)}</code>
+      </p>
+      <p style="font-size:12px;color:var(--muted);margin-top:14px;padding:12px;background:rgba(184,146,60,.08);border-left:2px solid var(--gold)">
+        该学员未注册（无手机号），无法保存教练备注，也没有打卡/复盘数据。可用本页信息做潜客分析或外呼跟进。
+      </p>
+    </div>` : `
     <div class="drawer-sec">
       <div class="drawer-sec-title">教练备注</div>
       <div class="coach-note">
         <textarea id="acc-note" placeholder="对该学员的备注、跟进、付费意向...">${esc(a.coach_note || '')}</textarea>
         <button class="save" onclick="saveAccountNote('${a.id}')">保存备注</button>
       </div>
-    </div>
+    </div>`}
     <div class="drawer-sec">
       <div class="drawer-sec-title">诊断记录 · ${a.assessments.length} 次</div>
       ${assessHtml}
     </div>
+    ${a.__anon ? '' : `
     <div class="drawer-sec">
       <div class="drawer-sec-title">每周复盘 · ${a.reviews.length} 条</div>
       ${reviewsHtml}
@@ -514,7 +551,7 @@ function openDrawer(id){
     <div class="drawer-sec">
       <div class="drawer-sec-title">每日打卡 · ${a.checkins.length} 条</div>
       ${checkinsHtml}
-    </div>
+    </div>`}
   `;
   document.getElementById('drawer').classList.add('open');
   document.getElementById('drawer-mask').classList.add('open');
@@ -821,7 +858,7 @@ async function buildGrowthCurvePng(assessments){
 async function exportStudentDocx(){
   const id = currentDrawerId;
   if (!id){ alert('未选中学员'); return; }
-  const a = allAccounts.find(x => x.id === id);
+  const a = findAccount(id);
   if (!a){ alert('找不到学员数据'); return; }
   const btn = document.getElementById('d-export-btn');
   if (btn){ btn.disabled = true; btn.textContent = '生成中...'; }

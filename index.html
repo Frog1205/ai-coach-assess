@@ -273,6 +273,35 @@ nav{background:var(--c1d);height:64px;padding:0 32px;display:flex;
 .cta-area a:hover{color:var(--c1);border-color:var(--c1)}
 .cta-area .btn-main{padding:18px 56px!important;font-size:13px!important;letter-spacing:.3em!important}
 
+/* 报告页 · 段位彩蛋卡片 */
+.egg-card{display:none;margin:36px 0;padding:36px 40px;border-radius:2px;position:relative;overflow:hidden}
+.egg-card.show{display:block;animation:eggIn .8s cubic-bezier(.4,0,.2,1)}
+@keyframes eggIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.egg-card .egg-tag{font-family:var(--latin);font-size:11px;letter-spacing:.4em;margin-bottom:14px}
+.egg-card h3{font-family:var(--serif);font-size:24px;font-weight:500;letter-spacing:.06em;margin-bottom:14px;line-height:1.5}
+.egg-card p{font-size:14px;line-height:1.95;font-weight:300;letter-spacing:.02em;margin-bottom:18px}
+.egg-card .egg-actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+.egg-card .egg-btn{padding:13px 28px;font-size:13px;letter-spacing:.2em;border:1px solid;cursor:pointer;background:transparent;font-family:var(--sans);transition:all .2s}
+.egg-card .egg-btn.primary{color:#fff}
+.egg-card.low{background:linear-gradient(135deg,#FBF8F2 0%,#F5EFE0 100%);border:1px solid rgba(184,146,60,.3)}
+.egg-card.low::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold)}
+.egg-card.low .egg-tag{color:var(--gold3)}
+.egg-card.low h3{color:var(--c1)}
+.egg-card.low p{color:var(--ink)}
+.egg-card.low .egg-btn.primary{background:var(--c1);border-color:var(--c1)}
+.egg-card.low .egg-btn.primary:hover{background:var(--gold);border-color:var(--gold)}
+.egg-card.low .egg-btn.ghost{color:var(--c1);border-color:rgba(10,26,46,.2)}
+.egg-card.low .egg-btn.ghost:hover{border-color:var(--c1)}
+.egg-card.high{background:linear-gradient(135deg,#0A1A2E 0%,#1A3A5C 100%);border:1px solid var(--gold);color:#fff}
+.egg-card.high::before{content:'⚜';position:absolute;right:24px;top:14px;font-size:64px;color:rgba(184,146,60,.18);font-family:var(--serif)}
+.egg-card.high .egg-tag{color:var(--gold2)}
+.egg-card.high h3{color:#fff}
+.egg-card.high p{color:rgba(255,255,255,.85)}
+.egg-card.high .egg-btn.primary{background:var(--gold);border-color:var(--gold);color:var(--c1d);font-weight:500}
+.egg-card.high .egg-btn.primary:hover{background:#fff;border-color:#fff}
+.egg-card.high .egg-btn.ghost{color:rgba(255,255,255,.85);border-color:rgba(255,255,255,.3)}
+.egg-card.high .egg-btn.ghost:hover{border-color:#fff;color:#fff}
+
 /* ── FOOTER ── */
 footer{background:var(--c1d);color:rgba(255,255,255,.4);text-align:center;
        padding:48px 24px;font-size:11px;margin-top:0;
@@ -630,6 +659,29 @@ footer span{color:var(--gold2);font-family:var(--latin);font-weight:500;letter-s
     <div class="analysis-box">
       <h3 id="ana-title">—</h3>
       <p id="ana-text">—</p>
+    </div>
+
+    <!-- 低分软接引导（&lt;30 触发，不弹 alert，温和提示 + 教练直触）-->
+    <div class="egg-card low" id="egg-low">
+      <div class="egg-tag">ATLAS · COACH CHANNEL</div>
+      <h3>刚开始，恰是最佳时机</h3>
+      <p>测出短板不是问题，<strong>看不见短板才是</strong>。同行业的专家与高管里，从这个起点出发跃升最快的人，<br>共同点都是<strong>第一时间找到一位懂行业又懂 AI 的教练</strong>，而不是自己摸索半年。</p>
+      <p style="color:var(--muted);font-size:13px">ATLAS 教练 1v1 私享通道现已为你打开。本月剩余 3 席。</p>
+      <div class="egg-actions">
+        <button class="egg-btn primary" onclick="openContact()">添加 ATLAS 教练 · 1v1 评估</button>
+        <button class="egg-btn ghost" onclick="document.getElementById('egg-low').classList.remove('show')">稍后再说</button>
+      </div>
+    </div>
+
+    <!-- 高分对标裂变（&ge;95 触发，保留高端调，给具体物料）-->
+    <div class="egg-card high" id="egg-high">
+      <div class="egg-tag">⚜ MASTER · TOP 5%</div>
+      <h3>你已抵达宗师段位 · 行业前 5%</h3>
+      <p>这个段位的对话不再是"如何使用 AI"，而是<strong>组织级 AI 战略与垂直 Agent 产品化</strong>。<br>ATLAS 为同段位专家准备了一份「对标榜单」——邀请你眼里的同段位友人完成测评，<br>解锁后你将看到这个圈层的能力分布与稀缺画像。</p>
+      <div class="egg-actions">
+        <button class="egg-btn primary" onclick="exportReport()">📷 生成对标邀请海报</button>
+        <button class="egg-btn ghost" onclick="openContact()">直通 Apex 顾问</button>
+      </div>
     </div>
 
     <div class="sec-title">私享陪跑方案</div>
@@ -1209,6 +1261,13 @@ showResult = function() {
   });
   LS.set('history', history);
   LS.set('user', user);
+
+  // 段位彩蛋（低分软引导 / 高分对标裂变）
+  const low  = document.getElementById('egg-low');
+  const high = document.getElementById('egg-high');
+  low.classList.remove('show'); high.classList.remove('show');
+  if (total < 30)       low.classList.add('show');
+  else if (total >= 95) high.classList.add('show');
 };
 
 // ══════════════════════════════════════════════════════

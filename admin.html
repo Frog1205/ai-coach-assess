@@ -505,6 +505,15 @@ async function activateQbank(version){
 function ymd(d){ return new Date(d).toISOString().slice(0,10); }
 function todayStamp(){ return new Date().toISOString().slice(0,10).replace(/-/g,''); }
 
+// 找出 dim_pct 里最低分的维度名（多个并列则全部列出）
+function weakestDim(dimPct){
+  if (!Array.isArray(dimPct) || dimPct.length !== 5) return '';
+  const min = Math.min(...dimPct);
+  const names = [];
+  dimPct.forEach((v, i) => { if (v === min) names.push(`${ATLAS_DIMS[i]}(${v}分)`); });
+  return names.join(' / ');
+}
+
 function periodStart(period){
   const now = new Date();
   if (period === 'week'){
@@ -540,6 +549,7 @@ function exportAllStudentsXLSX(){
       '题库版本': last.qbank_version || ''
     };
     ATLAS_DIMS.forEach((name, i) => { row[name] = dim[i] ?? ''; });
+    row['薄弱维度']   = weakestDim(dim);
     row['打卡总数']   = a.checkins.length;
     row['复盘总数']   = a.reviews.length;
     row['教练备注']   = a.coach_note || '';
@@ -550,7 +560,7 @@ function exportAllStudentsXLSX(){
     {wch:12},{wch:18},{wch:14},{wch:10},{wch:12},{wch:12},
     {wch:8},{wch:12},{wch:14},{wch:12},{wch:10},
     {wch:10},{wch:12},{wch:10},{wch:12},{wch:12},
-    {wch:8},{wch:8},{wch:40}
+    {wch:24},{wch:8},{wch:8},{wch:40}
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '全员花名册');
@@ -588,6 +598,7 @@ function exportPeriodXLSX(period){
           '层级': x.level || ''
         };
         ATLAS_DIMS.forEach((name, i) => { row[name] = dim[i] ?? ''; });
+        row['薄弱维度'] = weakestDim(dim);
         row['题库版本'] = x.qbank_version || '';
         newAssess.push(row);
       }
@@ -634,7 +645,7 @@ function exportPeriodXLSX(period){
     XLSX.utils.book_append_sheet(wb, ws, name);
   };
   addSheet('新注册', newRegs, [{wch:12},{wch:18},{wch:14},{wch:10},{wch:18}]);
-  addSheet('新诊断', newAssess, [{wch:12},{wch:18},{wch:18},{wch:8},{wch:14},{wch:10},{wch:12},{wch:10},{wch:12},{wch:12},{wch:10}]);
+  addSheet('新诊断', newAssess, [{wch:12},{wch:18},{wch:18},{wch:8},{wch:14},{wch:10},{wch:12},{wch:10},{wch:12},{wch:12},{wch:24},{wch:10}]);
   addSheet('新打卡', newCheckins, [{wch:12},{wch:12},{wch:50},{wch:40},{wch:20}]);
   addSheet('新复盘', newReviews, [{wch:12},{wch:10},{wch:12},{wch:40},{wch:40},{wch:40},{wch:40}]);
 

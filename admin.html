@@ -11,6 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="admin-config.js" onerror="alert('admin-config.js 未配置,见 SUPABASE_SETUP.md');"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -632,6 +633,91 @@ function exportPeriodXLSX(period){
   XLSX.writeFile(wb, `ATLAS_${label}活跃明细_${todayStamp()}.xlsx`);
 }
 
+// 五维 / 段位 / 方案 镜像(与学员端 index.html 保持一致，仅用于报告排版)
+const ATLAS_DIMS = ['工具认知', '提示词能力', '内容创作', '自动化思维', '工作流整合'];
+const ATLAS_DIM_COLORS = ['#1A4D8C','#0F9D6E','#C9A14A','#6C3ABF','#C0392B'];
+const ATLAS_LEVEL_TO_PLAN = { '观望者':'A','入局者':'B','实战派':'B','破局者':'C','宗师':'C' };
+const ATLAS_PLANS = {
+  A:{ name:'ATLAS · Foundation', dur:'3-4 周', focus:'认知框架与个人工作流',     feats:['1v1 定制学习路径','行业垂直提示词资产库','每周 1 次 1v1 视频复盘','全套工具配置与账号策略'] },
+  B:{ name:'ATLAS · Prime',      dur:'6-8 周', focus:'深度业务介入 + Agent 部署', feats:['每日 30 分钟语音/视频 1v1','直接参与真实业务任务','Agent 工具专属部署','个人 IP 内容矩阵规划'] },
+  C:{ name:'ATLAS · Apex',       dur:'10-12 周', focus:'战略级 AI + 组织落地',    feats:['每周 2 次深度 1v1','10 篇行业旗舰内容共创','组织级 AI 转型咨询','结营后 3 个月顾问跟进'] }
+};
+
+async function renderChartPng(config, w, h){
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.style.cssText = 'position:fixed;left:-99999px;top:0';
+  document.body.appendChild(canvas);
+  config.options = config.options || {};
+  config.options.animation = false;
+  config.options.responsive = false;
+  config.options.devicePixelRatio = 2;
+  const chart = new Chart(canvas.getContext('2d'), config);
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const dataUrl = canvas.toDataURL('image/png');
+  chart.destroy();
+  canvas.remove();
+  const bin = atob(dataUrl.split(',')[1]);
+  const buf = new Uint8Array(bin.length);
+  for (let i=0;i<bin.length;i++) buf[i] = bin.charCodeAt(i);
+  return buf.buffer;
+}
+
+async function buildRadarPng(dimPct){
+  return renderChartPng({
+    type:'radar',
+    data:{
+      labels: ATLAS_DIMS,
+      datasets:[{
+        label:'本次五维战力',
+        data: dimPct,
+        backgroundColor:'rgba(184,146,60,0.25)',
+        borderColor:'#B8923C',
+        borderWidth:2,
+        pointBackgroundColor: ATLAS_DIM_COLORS,
+        pointRadius:5,
+        pointBorderColor:'#fff'
+      }]
+    },
+    options:{
+      plugins:{ legend:{ display:false }, title:{ display:true, text:'五维战力雷达图', font:{ size:18 }, color:'#0A1A2E' } },
+      scales:{ r:{
+        min:0, max:100,
+        ticks:{ stepSize:20, backdropColor:'transparent', color:'#7A6E5C', font:{ size:11 } },
+        pointLabels:{ font:{ size:14, weight:'600' }, color:'#0A1A2E' },
+        grid:{ color:'#D8CFB8' }, angleLines:{ color:'#D8CFB8' }
+      }}
+    }
+  }, 700, 560);
+}
+
+async function buildGrowthCurvePng(assessments){
+  const ordered = assessments.slice().reverse();
+  const labels = ordered.map(x => (x.taken_at || '').slice(0,10));
+  return renderChartPng({
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'总分',
+        data: ordered.map(x => x.total),
+        borderColor:'#B8923C', backgroundColor:'rgba(184,146,60,0.15)',
+        borderWidth:2.5, tension:0.25, pointRadius:5, pointBackgroundColor:'#B8923C', fill:true
+      }]
+    },
+    options:{
+      plugins:{
+        legend:{ display:false },
+        title:{ display:true, text:'战力跃迁曲线（历次诊断总分）', font:{ size:16 }, color:'#0A1A2E' }
+      },
+      scales:{
+        y:{ min:0, max:100, ticks:{ stepSize:20, color:'#7A6E5C' }, grid:{ color:'#EDE7DA' } },
+        x:{ ticks:{ color:'#7A6E5C', font:{ size:10 }, maxRotation:30 }, grid:{ display:false } }
+      }
+    }
+  }, 820, 360);
+}
+
 async function exportStudentDocx(){
   const id = currentDrawerId;
   if (!id){ alert('未选中学员'); return; }
@@ -642,7 +728,7 @@ async function exportStudentDocx(){
 
   try {
     const D = window.docx;
-    const { Document, Packer, Paragraph, HeadingLevel, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle } = D;
+    const { Document, Packer, Paragraph, HeadingLevel, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, ImageRun } = D;
 
     const H = (t, lvl=HeadingLevel.HEADING_2) => new Paragraph({ heading: lvl, children:[new TextRun({ text: t, bold: true })] });
     const P = (t, opts={}) => new Paragraph({ children:[new TextRun({ text: t || '', ...opts })] });
@@ -685,6 +771,70 @@ async function exportStudentDocx(){
     children.push(H('教练备注'));
     children.push(P(a.coach_note || '（暂无）'));
     children.push(P(''));
+
+    // ── 五维战力雷达图 ──
+    const latest = a.assessments[0];
+    if (latest && Array.isArray(latest.dim_pct) && latest.dim_pct.length === 5){
+      children.push(H('五维战力雷达图'));
+      children.push(P(`最近一次诊断 · ${(latest.taken_at||'').slice(0,10)} · 总分 ${latest.total} · ${latest.level || '—'}`, { color:'888888' }));
+      try {
+        const radarBuf = await buildRadarPng(latest.dim_pct);
+        children.push(new Paragraph({ alignment: AlignmentType.CENTER, children:[
+          new ImageRun({ data: radarBuf, transformation:{ width: 420, height: 336 } })
+        ]}));
+        // 各维度分数列表
+        const dimRows = ATLAS_DIMS.map((name, i) => [name, latest.dim_pct[i] + ' 分']);
+        children.push(buildTable(['维度','本次分数'], dimRows));
+      } catch(e){
+        console.warn('[ATLAS Admin] 雷达图生成失败', e);
+        children.push(P('（雷达图生成失败：' + e.message + '）', { italics:true, color:'C0392B' }));
+      }
+      children.push(P(''));
+    } else if (a.assessments.length){
+      children.push(H('五维战力雷达图'));
+      children.push(P('（此诊断记录无五维明细数据，可能是早期版本）', { italics:true, color:'888888' }));
+      children.push(P(''));
+    }
+
+    // ── 学习地图 ──
+    children.push(H('学习地图'));
+    if (latest){
+      const recPlan = ATLAS_LEVEL_TO_PLAN[latest.level] || 'B';
+      const plan = ATLAS_PLANS[recPlan];
+      children.push(P(`当前段位：${latest.level || '—'}　·　推荐路径：${plan.name}（${plan.dur}）`, { bold:true }));
+      children.push(P(`聚焦：${plan.focus}`, { color:'8C6E2E' }));
+      children.push(P(''));
+      children.push(buildTable(
+        ['路径','周期','聚焦','是否推荐'],
+        ['A','B','C'].map(k => [
+          ATLAS_PLANS[k].name, ATLAS_PLANS[k].dur, ATLAS_PLANS[k].focus, k === recPlan ? '★ 推荐' : ''
+        ])
+      ));
+      children.push(P(''));
+      children.push(new Paragraph({ children:[new TextRun({ text:`${plan.name} · 核心交付`, bold:true })] }));
+      plan.feats.forEach(f => children.push(new Paragraph({
+        bullet:{ level:0 }, children:[new TextRun({ text: f, size: 22 })]
+      })));
+      children.push(P(''));
+    } else {
+      children.push(P('（该学员尚无诊断记录，无法生成学习地图）', { italics:true, color:'888888' }));
+      children.push(P(''));
+    }
+
+    // ── 战力跃迁曲线（2 次及以上诊断才有意义）──
+    if (a.assessments.length >= 2){
+      children.push(H('战力跃迁曲线'));
+      try {
+        const curveBuf = await buildGrowthCurvePng(a.assessments);
+        children.push(new Paragraph({ alignment: AlignmentType.CENTER, children:[
+          new ImageRun({ data: curveBuf, transformation:{ width: 540, height: 240 } })
+        ]}));
+      } catch(e){
+        console.warn('[ATLAS Admin] 跃迁曲线生成失败', e);
+        children.push(P('（曲线生成失败：' + e.message + '）', { italics:true, color:'C0392B' }));
+      }
+      children.push(P(''));
+    }
 
     children.push(H(`诊断记录（共 ${a.assessments.length} 次）`));
     children.push(buildTable(

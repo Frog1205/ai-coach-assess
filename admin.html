@@ -110,6 +110,22 @@ tbody td.num{font-family:var(--latin);font-weight:500;color:var(--c1);font-size:
 .assess-row .level{font-family:var(--serif);color:var(--gold)}
 .assess-row .date{margin-left:auto;font-family:var(--latin);font-size:12px;color:var(--muted);letter-spacing:.15em}
 
+/* 答题明细 */
+.ans-detail{margin-top:8px;border:1px solid var(--border);background:#fff}
+.ans-row{padding:14px 16px;border-bottom:1px solid var(--border);font-size:12px;line-height:1.7}
+.ans-row:last-child{border:none}
+.ans-row .top{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.ans-row .num{font-family:var(--latin);font-size:13px;color:var(--gold);font-weight:500;letter-spacing:.1em}
+.ans-row .dim-tag{font-size:10px;padding:2px 8px;background:rgba(184,146,60,.1);color:var(--gold3);letter-spacing:.15em}
+.ans-row .score-tag{margin-left:auto;font-family:var(--latin);font-size:13px;font-weight:500}
+.ans-row .score-tag.s0{color:#C0392B}
+.ans-row .score-tag.s1{color:#C9A14A}
+.ans-row .score-tag.s2{color:#1A4D8C}
+.ans-row .score-tag.s3{color:#0F9D6E}
+.ans-row .q{color:var(--ink);font-weight:400;margin-bottom:4px}
+.ans-row .picked{color:var(--gold3);padding-left:14px;border-left:2px solid var(--gold);font-weight:300}
+.ans-empty{padding:24px;text-align:center;color:var(--muted);font-size:12px}
+
 /* qbank tab */
 .qbank-list{display:flex;flex-direction:column;gap:0;background:#fff;border:1px solid var(--border)}
 .qbank-row{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border)}
@@ -296,20 +312,22 @@ async function checkSession(){
 let allAccounts = [];
 let anonAssessments = [];
 let anonAccountsSynth = [];  // 把匿名诊断包成 account-like 对象，复用抽屉/Word 导出
+let qbankCache = {};         // version → { questions:[{d,q,a:[...]}, ...] }
 
 async function initData(){
   const sb = getSB(); if (!sb) return;
   const tbody = document.getElementById('acc-tbody');
   tbody.innerHTML = '<tr><td colspan="7" class="empty">从 Supabase 拉取中...</td></tr>';
 
-  // 4 个表分别查,任何一个错都单独显示
+  // 5 个表分别查,任何一个错都单独显示
   const queries = await Promise.all([
     sb.from('accounts').select('*').order('created_at', { ascending:false }),
     sb.from('assessments').select('*').order('taken_at', { ascending:false }),
     sb.from('checkins').select('*').order('date', { ascending:false }),
     sb.from('reviews').select('*').order('created_at', { ascending:false }),
+    sb.from('qbank_versions').select('version,questions'),
   ]);
-  const names = ['accounts','assessments','checkins','reviews'];
+  const names = ['accounts','assessments','checkins','reviews','qbank_versions'];
   const errs = queries.map((q,i) => q.error ? `${names[i]}: ${q.error.message}` : null).filter(Boolean);
   if (errs.length){
     console.error('[ATLAS Admin] Supabase 查询错误', queries);
@@ -323,7 +341,10 @@ async function initData(){
   const assessments = queries[1].data || [];
   const checkins = queries[2].data || [];
   const reviews = queries[3].data || [];
-  console.log(`[ATLAS Admin] 加载 ${accounts.length} 账户 / ${assessments.length} 测评 / ${checkins.length} 打卡 / ${reviews.length} 复盘`);
+  const qbanks = queries[4].data || [];
+  qbankCache = {};
+  qbanks.forEach(q => { qbankCache[q.version] = q.questions || []; });
+  console.log(`[ATLAS Admin] 加载 ${accounts.length} 账户 / ${assessments.length} 测评 / ${checkins.length} 打卡 / ${reviews.length} 复盘 / ${qbanks.length} 题库版本`);
 
   // 按 account_id 聚合
   const byId = {};
@@ -543,6 +564,11 @@ function openDrawer(id){
       <div class="drawer-sec-title">诊断记录 · ${a.assessments.length} 次</div>
       ${assessHtml}
     </div>
+    ${a.assessments.length ? `
+    <div class="drawer-sec">
+      <div class="drawer-sec-title">最近一次答题明细 · ${(a.assessments[0].taken_at||'').slice(0,10)}</div>
+      ${renderAnswerDetailHtml(a.assessments[0])}
+    </div>` : ''}
     ${a.__anon ? '' : `
     <div class="drawer-sec">
       <div class="drawer-sec-title">每周复盘 · ${a.reviews.length} 条</div>
@@ -622,6 +648,40 @@ async function activateQbank(version){
 // ══════════════════════════════════════════════════════
 function ymd(d){ return new Date(d).toISOString().slice(0,10); }
 function todayStamp(){ return new Date().toISOString().slice(0,10).replace(/-/g,''); }
+
+// 把一次诊断的答题数据展开成行 [{n,dim,q,picked,score,max}]
+function buildAnswerRows(assessment){
+  if (!assessment || !Array.isArray(assessment.answers)) return null;
+  const qs = qbankCache[assessment.qbank_version];
+  if (!qs || !qs.length) return { noQbank:true, version: assessment.qbank_version };
+  return assessment.answers.map((picked, i) => {
+    const q = qs[i] || {};
+    return {
+      n: i + 1,
+      dim: ATLAS_DIMS[q.d] ?? '—',
+      q: q.q || '（题目缺失）',
+      picked: (picked == null) ? '（未作答）' : (q.a && q.a[picked] != null ? q.a[picked] : `选项 ${picked}`),
+      score: picked == null ? 0 : picked,
+      max: 3
+    };
+  });
+}
+
+function renderAnswerDetailHtml(assessment){
+  const rows = buildAnswerRows(assessment);
+  if (!rows) return '<div class="ans-empty">该次诊断无答题明细（早期记录或本次新功能上线前）</div>';
+  if (rows.noQbank) return `<div class="ans-empty">未找到题库 ${esc(rows.version || '—')} 的题目原文（题库被删除？），无法渲染明细</div>`;
+  return '<div class="ans-detail">' + rows.map(r => `
+    <div class="ans-row">
+      <div class="top">
+        <span class="num">Q${r.n}</span>
+        <span class="dim-tag">${esc(r.dim)}</span>
+        <span class="score-tag s${r.score}">${r.score} / ${r.max}</span>
+      </div>
+      <div class="q">${esc(r.q)}</div>
+      <div class="picked">${esc(r.picked)}</div>
+    </div>`).join('') + '</div>';
+}
 
 // 找出 dim_pct 里最低分的维度名（多个并列则全部列出）
 function weakestDim(dimPct){
@@ -979,6 +1039,23 @@ async function exportStudentDocx(){
       a.assessments.map(x => [x.taken_at ? x.taken_at.slice(0,10) : '', x.total ?? '', x.level || '', x.qbank_version || ''])
     ));
     children.push(P(''));
+
+    // ── 最近一次答题明细 ──
+    if (latest){
+      children.push(H(`最近一次答题明细 · ${(latest.taken_at||'').slice(0,10)}`));
+      const ansRows = buildAnswerRows(latest);
+      if (!ansRows){
+        children.push(P('（该次诊断无答题明细，早期记录或本次新功能上线前）', { italics:true, color:'888888' }));
+      } else if (ansRows.noQbank){
+        children.push(P(`（未找到题库 ${ansRows.version || '—'} 的题目原文）`, { italics:true, color:'888888' }));
+      } else {
+        children.push(buildTable(
+          ['#','维度','题目','所选答项','得分'],
+          ansRows.map(r => [String(r.n), r.dim, r.q, r.picked, `${r.score}/${r.max}`])
+        ));
+      }
+      children.push(P(''));
+    }
 
     children.push(H(`每周复盘（共 ${a.reviews.length} 条）`));
     if (!a.reviews.length){

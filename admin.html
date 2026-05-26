@@ -178,6 +178,7 @@ tbody td.num{font-family:var(--latin);font-weight:500;color:var(--c1);font-size:
         <button class="export-btn solid" onclick="exportAllStudentsXLSX()">全员花名册 · Excel</button>
         <button class="export-btn" onclick="exportPeriodXLSX('week')">本周活跃明细</button>
         <button class="export-btn" onclick="exportPeriodXLSX('month')">本月活跃明细</button>
+        <button class="export-btn" onclick="exportAnonXLSX()">匿名诊断 · Excel</button>
       </div>
 
       <div class="tbl-wrap">
@@ -193,6 +194,27 @@ tbody td.num{font-family:var(--latin);font-weight:500;color:var(--c1);font-size:
           </tr></thead>
           <tbody id="acc-tbody"><tr><td colspan="7" class="empty">加载中...</td></tr></tbody>
         </table>
+      </div>
+
+      <!-- 匿名诊断（未注册）-->
+      <div style="margin-top:48px">
+        <div class="page-h" style="font-size:22px">匿名诊断（未注册）</div>
+        <div class="page-sub">完成问卷但未留手机号的学员。<b>姓名 / 行业 / 目标</b>来自填写信息，可作为优质潜在客户线索分析。</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>姓名</th>
+              <th>行业</th>
+              <th>目标</th>
+              <th>总分</th>
+              <th>层级</th>
+              <th>薄弱维度</th>
+              <th>诊断时间</th>
+              <th>题库版本</th>
+            </tr></thead>
+            <tbody id="anon-tbody"><tr><td colspan="8" class="empty">加载中...</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -272,6 +294,7 @@ async function checkSession(){
 //  数据加载
 // ══════════════════════════════════════════════════════
 let allAccounts = [];
+let anonAssessments = [];
 
 async function initData(){
   const sb = getSB(); if (!sb) return;
@@ -308,9 +331,13 @@ async function initData(){
   checkins.forEach(x => { if (byId[x.account_id]) byId[x.account_id].checkins.push(x); });
   reviews.forEach(x => { if (byId[x.account_id]) byId[x.account_id].reviews.push(x); });
 
+  // 匿名诊断（account_id 为 null，未注册学员完成的问卷）
+  anonAssessments = assessments.filter(x => !x.account_id);
+
   allAccounts = Object.values(byId);
   renderStats(accounts, assessments, checkins, reviews);
   renderAccTable();
+  renderAnonTable();
 }
 
 function refreshData(){
@@ -325,9 +352,11 @@ async function doLogout(){
 }
 
 function renderStats(accts, ass, cis, revs){
+  const anonCnt = ass.filter(x => !x.account_id).length;
   const html = `
     <div class="stat"><div class="num">${accts.length}</div><div class="lbl">注 册 学 员</div></div>
     <div class="stat"><div class="num">${ass.length}</div><div class="lbl">诊 断 次 数</div></div>
+    <div class="stat"><div class="num" style="color:${anonCnt?'var(--seal)':'var(--c1)'}">${anonCnt}</div><div class="lbl">匿 名 诊 断</div></div>
     <div class="stat"><div class="num">${cis.length}</div><div class="lbl">打 卡 总 数</div></div>
     <div class="stat"><div class="num">${revs.length}</div><div class="lbl">复 盘 总 数</div></div>
     <div class="stat"><div class="num">${accts.filter(a => a.tier && a.tier !== 'free').length}</div><div class="lbl">付 费 学 员</div></div>
@@ -355,6 +384,58 @@ function renderAccTable(){
         <td>${fmtDate(a.last_seen_at)}</td>
       </tr>`;
   }).join('');
+}
+
+function renderAnonTable(){
+  const tbody = document.getElementById('anon-tbody');
+  if (!anonAssessments.length){
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">暂无匿名诊断</td></tr>';
+    return;
+  }
+  tbody.innerHTML = anonAssessments.map(x => {
+    const u = x.user_info || {};
+    return `
+      <tr style="cursor:default">
+        <td><b>${esc(u.name || '—')}</b></td>
+        <td>${esc(u.industry || '—')}</td>
+        <td>${esc(u.goal || '—')}</td>
+        <td class="num">${x.total ?? '—'}</td>
+        <td>${esc(x.level || '—')}</td>
+        <td style="font-size:11px;color:var(--gold3)">${esc(weakestDim(x.dim_pct) || '—')}</td>
+        <td>${x.taken_at ? x.taken_at.slice(0,10) : '—'}</td>
+        <td style="font-family:var(--latin);color:var(--muted)">${esc(x.qbank_version || '—')}</td>
+      </tr>`;
+  }).join('');
+}
+
+function exportAnonXLSX(){
+  if (!anonAssessments.length){ alert('暂无匿名诊断记录'); return; }
+  const rows = anonAssessments.map(x => {
+    const u = x.user_info || {};
+    const dim = Array.isArray(x.dim_pct) ? x.dim_pct : [];
+    const row = {
+      '姓名': u.name || '',
+      '行业': u.industry || '',
+      '目标': u.goal || '',
+      '诊断时间': x.taken_at ? x.taken_at.slice(0,16).replace('T',' ') : '',
+      '总分': x.total ?? '',
+      '层级': x.level || ''
+    };
+    ATLAS_DIMS.forEach((name, i) => { row[name] = dim[i] ?? ''; });
+    row['薄弱维度'] = weakestDim(dim);
+    row['题库版本'] = x.qbank_version || '';
+    row['匿名标识'] = x.phone || '';
+    return row;
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    {wch:12},{wch:14},{wch:14},{wch:18},{wch:8},{wch:12},
+    {wch:10},{wch:12},{wch:10},{wch:12},{wch:12},
+    {wch:24},{wch:10},{wch:18}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '匿名诊断');
+  XLSX.writeFile(wb, `ATLAS_匿名诊断_${todayStamp()}.xlsx`);
 }
 
 function fmtDate(s){

@@ -1,0 +1,59 @@
+name: Publish Qbank to Supabase
+
+# 把 qbank/<version>.json 发布到 Supabase qbank_versions 表,并激活为当前题库
+# (其他版本自动 is_active=false)。
+#
+# 触发方式:
+#   gh workflow run publish-qbank.yml -f version=2026.06
+# 或在 Actions 页面手动运行。
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '要发布的题库版本(如 2026.06)'
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish qbank/${{ inputs.version }}.json
+        env:
+          URL: ${{ secrets.SUPABASE_URL }}
+          KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -e
+          file="qbank/${VERSION}.json"
+          if [ ! -f "$file" ]; then
+            echo "::error::文件 $file 不存在。请先在本地用 export-qbank 生成。"
+            exit 1
+          fi
+
+          echo "1. 把现有所有版本置 is_active=false"
+          curl -sS -X PATCH \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            "$URL/rest/v1/qbank_versions?version=neq.__never__" \
+            -d '{"is_active":false}'
+
+          echo "2. upsert 新版本(冲突时按 version 主键覆盖)"
+          code=$(curl -sS -o /tmp/resp.json -w "%{http_code}" -X POST \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: resolution=merge-duplicates,return=representation" \
+            "$URL/rest/v1/qbank_versions" \
+            -d @"$file")
+          echo "HTTP $code"
+          cat /tmp/resp.json | head -c 600
+          echo ""
+
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::Publish failed"
+            exit 1
+          fi
+          echo "✓ Qbank $VERSION 已发布并激活"

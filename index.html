@@ -1006,40 +1006,44 @@ const QS = [
 
 // ── 段位定义(面向专家与高管) ────────────────────────
 const LEVELS = [
-  { min:0,  max:24,  name:'观望者',  emoji:'🌑', color:'#888',
+  { min:0,  max:29,  name:'观望者',  emoji:'🌑', color:'#888',
     title:'尚未真正进入 AI 战场',
     desc:'你目前还在外围观察 AI——使用零散、未形成习惯。这在当下的商业环境中正在成为隐性风险:同行已经开始用 AI 重构效率与决策。好消息是,你的行业经验与判断力本身就是最强护城河,补上 AI 这块拼图,跃迁速度会远超新人。',
     plan:'A' },
-  { min:25, max:44,  name:'入局者',  emoji:'🌓', color:'#1A4D8C',
+  { min:30, max:50,  name:'入局者',  emoji:'🌓', color:'#1A4D8C',
     title:'入门已破,但远未形成战力',
     desc:'你能用 AI 解决一些零散问题,但工具选择、提示词、产出质量都靠感觉。在专家与高管圈层,这个阶段最大风险是"以为自己已经懂了"——AI 的真正杠杆在体系而非工具。你需要的不是更多新工具,而是一套适配你身份的 AI 决策与工作方法论。',
     plan:'B' },
-  { min:45, max:64,  name:'实战派',  emoji:'⚔', color:'#0F9D6E',
+  { min:51, max:74,  name:'实战派',  emoji:'⚔', color:'#0F9D6E',
     title:'AI 已嵌入工作,体系尚未打通',
     desc:'你已经把 AI 用进了真实业务,有自己的心得与产出。瓶颈是各模块之间没串成体系——内容、研究、决策、自动化散落各处。下一阶段的关键:把 AI 从"个人工具"升级为"组织/业务的战略资产"。',
     plan:'B' },
-  { min:65, max:82,  name:'破局者',  emoji:'🏆', color:'#C9A14A',
+  { min:75, max:89,  name:'破局者',  emoji:'🏆', color:'#C9A14A',
     title:'已建立工作流,Agent 化是分水岭',
     desc:'你已经远超同行业大多数人。有自己的提示词资产、稳定输出和多工具实践。下一个分水岭是 Agent 化:让 AI 自主执行而非辅助执行,让团队/组织而非个人享受 AI 红利。跨过这一步,你将进入宗师段位。',
     plan:'C' },
-  { min:83, max:100, name:'宗师',  emoji:'⚜', color:'#0A2540',
+  { min:90, max:100, name:'宗师',  emoji:'⚜', color:'#0A2540',
     title:'AI 已成为你的战略杠杆',
-    desc:'你已站在行业 AI 应用的顶端梯队。有完整的工作流、自有 Agent 编排、清晰的 AI 战略观。这个段位的陪跑不再是"教你用",而是深度共创:垂直领域的 AI 产品化、组织级 AI 转型方案、个人 IP 与行业话语权的进一步放大。',
-    plan:'C' },
+    desc:'你已站在行业 AI 应用的顶端梯队——有完整的工作流、自有 Agent 编排、清晰的 AI 战略观。这个段位无需付费陪跑。ATLAS 诚邀你加入教练团:陪跑高净值学员、共建行业课题、放大个人 IP 与行业话语权。',
+    plan:'D' },
 ];
 
 // ── 私享陪跑方案(面向专家与企业老板) ───────────────────
 // TODO: 对接后端报价接口
 const PLANS = {
-  A:{ name:'ATLAS · Foundation', dur:'3 - 4 周', price:'7,980',
+  A:{ name:'ATLAS · Foundation', dur:'4 - 6 周', price:'8,800',
       desc:'适合刚开始系统化使用 AI 的专家与高管,快速建立认知框架与个人工作流。周期根据个人进度定制。',
       feats:['1v1 定制学习路径','每日微信专属答疑','每周 1 次 1v1 视频复盘(1 小时)','行业垂直提示词资产库','全套主流工具配置与账号策略'] },
-  B:{ name:'ATLAS · Prime', dur:'6 - 8 周', price:'16,800',
-      desc:'最受欢迎——专家与决策者首选,深度介入真实业务,Agent 工具专属部署。周期根据个人进度定制。',
-      feats:['包含 Foundation 全部内容','每日 30 分钟语音/视频 1v1','直接参与你的真实业务任务(决策/内容/自动化)','Agent 工具(Claude Code / WorkBuddy)专属部署','个人 IP 内容矩阵规划','结营后 60 天持续答疑'] },
-  C:{ name:'ATLAS · Apex', dur:'10 - 12 周', price:'29,800',
-      desc:'适合企业创始人与行业顶尖专家,系统构建 AI 战略优势与组织级落地能力。周期根据个人进度深度定制。',
-      feats:['包含 Prime 全部内容','每周 2 次深度 1v1(各 1.5 小时)','10 篇行业旗舰内容深度共创','组织级 AI 转型咨询(团队培训 + 流程梳理)','个人 IP 矩阵搭建与高端变现规划','结营后 3 个月私享顾问跟进'] },
+  B:{ name:'ATLAS · Prime', dur:'6 - 8 周', price:'12,800',
+      desc:'最受欢迎——专家与决策者首选,深度介入真实业务,Agent 工具专属部署。入局者打底,实战派进阶,文案与节奏按你的段位差异化。',
+      feats:['包含 Foundation 全部内容','每日 30 分钟语音/视频 1v1','直接参与你的真实业务任务(决策/内容/自动化)','Agent 工具(Claude Code / 桌面 Agent)专属部署','个人 IP 内容矩阵规划','结营后 60 天持续答疑'] },
+  C:{ name:'ATLAS · Apex', dur:'3 - 4 周陪跑 + 3 个月共建', price:'21,800',
+      desc:'适合破局者与企业创始人。3-4 周密集陪跑搭建战略级 Agent 工作站,结营后 3 个月专属共建期:持续放大你的行业杠杆。费用一次性 ¥21,800,共建期含在内。',
+      feats:['包含 Prime 全部内容','每周 2 次深度 1v1(各 1.5 小时)','3 个月共建期:每月 2 次深度复盘','10 篇行业旗舰内容深度共创','组织级 AI 转型咨询(团队培训 + 流程梳理)','个人 IP 矩阵搭建与高端变现规划'] },
+  D:{ name:'ATLAS · Mastermind 教练团', dur:'长期席位 · 邀请制',
+      priceText:'邀请制 · 无需付费',
+      desc:'你已是 ATLAS 顶端梯队。此段位无需付费陪跑,我们诚邀你以教练身份加入 ATLAS:陪跑高净值学员、共建行业课题、放大个人 IP 与行业话语权。',
+      feats:['陪跑 Prime 学员可获每位 ¥3,000 分成','联名行业课题与白皮书共创','专属顾问席位:战略级 AI 决策 1v1','受邀参与 ATLAS 年度闭门会议','申请教练资格 → 微信扫码 / 邮箱预约'] },
 };
 
 // ══════════════════════════════════════════════════════
@@ -1207,7 +1211,7 @@ function showResult() {
   // Plans — show recommended first
   const grid = document.getElementById('plans-grid');
   grid.innerHTML = '';
-  const order = { A:['A','B','C'], B:['B','A','C'], C:['C','B','A'] }[level.plan];
+  const order = { A:['A','B','C'], B:['B','A','C'], C:['C','B','A'], D:['D'] }[level.plan];
   order.forEach(key => {
     const p   = PLANS[key];
     const rec = key === level.plan;
@@ -1217,7 +1221,7 @@ function showResult() {
       ${rec ? '<div class="rec-badge">★ 根据你的测评结果推荐</div>' : ''}
       <div class="plan-name">${p.name}</div>
       <div class="plan-dur">${p.dur}</div>
-      <div class="plan-price">¥${p.price} <small>元</small></div>
+      <div class="plan-price">${p.priceText ? p.priceText : `¥${p.price} <small>元</small>`}</div>
       <div class="plan-desc">${p.desc}</div>
       <div class="plan-feats">${p.feats.map(f => `<div class="plan-feat">${f}</div>`).join('')}</div>`;
     grid.appendChild(card);

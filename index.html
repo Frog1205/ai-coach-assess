@@ -850,6 +850,17 @@ footer span{color:var(--gold2);font-family:var(--latin);font-weight:500;letter-s
   </div>
 </div>
 
+<!-- 宗师段位专属:扫码加入教练团 -->
+<div class="modal-mask" id="modal-mastermind">
+  <div class="modal-box" style="max-width:460px">
+    <button class="modal-close" onclick="closeMastermind()">×</button>
+    <h3>⚜ 宗师段位 · 私享邀请</h3>
+    <p>你已站在行业 AI 应用顶端梯队<br><strong style="color:var(--gold)">扫码添加 ATLAS 总顾问</strong>,提交教练团申请</p>
+    <img src="qr-mastermind.png" alt="ATLAS Mastermind WeChat QR" class="modal-qr" style="display:block;object-fit:contain;background:#fff;color:transparent">
+    <p style="font-size:12px;color:var(--gold);letter-spacing:.15em">宗师 才 能 看 到</p>
+  </div>
+</div>
+
 <footer>
   <span>A T L A S</span>
   专 为 行 业 专 家 与 企 业 决 策 者 的 A I 战 力 跃 迁 &nbsp;·&nbsp; M M X X V I
@@ -1212,6 +1223,11 @@ function showResult() {
   const grid = document.getElementById('plans-grid');
   grid.innerHTML = '';
   const order = { A:['A','B','C'], B:['B','A','C'], C:['C','B','A'], D:['D'] }[level.plan];
+
+  // 宗师段位 → 延迟弹出微信扫码模态(让用户先看到结果再触发)
+  if (level.plan === 'D') {
+    setTimeout(() => document.getElementById('modal-mastermind').classList.add('open'), 1200);
+  }
   order.forEach(key => {
     const p   = PLANS[key];
     const rec = key === level.plan;
@@ -1559,6 +1575,7 @@ function escapeHtml(s){
 // ══════════════════════════════════════════════════════
 function openContact(){ document.getElementById('modal-contact').classList.add('open'); }
 function closeContact(){ document.getElementById('modal-contact').classList.remove('open'); }
+function closeMastermind(){ document.getElementById('modal-mastermind').classList.remove('open'); }
 
 async function exportReport(){
   const el = document.querySelector('#s-result');

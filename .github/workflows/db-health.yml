@@ -1,0 +1,40 @@
+name: DB Health Check
+
+# 手动触发的数据库健康检查 — 查 5 张表的行数 + 抽样,绕开本机代理。
+# 一次性诊断工具,平时不运行。
+
+on:
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query all tables
+        run: |
+          set -e
+          URL="${{ secrets.SUPABASE_URL }}/rest/v1"
+          KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+          echo "=== Row counts (anon-visible via RLS) ==="
+          for t in accounts assessments checkins reviews qbank_versions; do
+            cr=$(curl -sS -D - -o /tmp/body \
+              -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+              -H "Prefer: count=exact" -H "Range: 0-0" \
+              "$URL/$t?select=id" | grep -i "^content-range" | tr -d '\r')
+            echo "$t : $cr"
+          done
+
+          echo ""
+          echo "=== qbank_versions 全部记录 ==="
+          curl -sS -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+            "$URL/qbank_versions?select=version,first_seen_at&order=first_seen_at.desc"
+
+          echo ""
+          echo "=== assessments 最近 10 条(脱敏) ==="
+          curl -sS -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+            "$URL/assessments?select=id,created_at,total_score,level_name,qbank_version&order=created_at.desc&limit=10"
+
+          echo ""
+          echo "=== accounts 注册分布(过去 30 天) ==="
+          curl -sS -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+            "$URL/accounts?select=created_at&order=created_at.desc&limit=50"

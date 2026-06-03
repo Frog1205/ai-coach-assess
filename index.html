@@ -1268,6 +1268,39 @@ const LS = {
   set(k, v){ localStorage.setItem('aicoach_'+k, JSON.stringify(v)); },
 };
 
+// 流量来源 first-touch 归因:首次落地捕获 UTM + referrer,localStorage 永久保存
+// 之后该用户的所有注册/测评/转化都归到首次来源,跨 session 稳定
+(function captureSource(){
+  try{
+    if (LS.get('signup_source')) return;
+    const u = new URL(location.href);
+    const g = k => u.searchParams.get(k);
+    const ref = document.referrer || null;
+    const src = {
+      utm_source:   g('utm_source')   || null,
+      utm_medium:   g('utm_medium')   || null,
+      utm_campaign: g('utm_campaign') || null,
+      utm_content:  g('utm_content')  || null,
+      utm_term:     g('utm_term')     || null,
+      ref_param:    g('ref')          || null,    // 短链友好参数
+      referrer:     ref,
+      ref_host:     ref ? (new URL(ref)).host : null,
+      landing_path: u.pathname + u.search,
+      landing_at:   new Date().toISOString(),
+    };
+    // 推断渠道:UTM > ref_param > referrer host
+    src.channel = src.utm_source || src.ref_param ||
+      (src.ref_host ? (
+        /weixin|wechat|qq\.com/.test(src.ref_host) ? 'wechat' :
+        /xhslink|xiaohongshu/.test(src.ref_host)   ? 'xiaohongshu' :
+        /douyin|tiktok/.test(src.ref_host)         ? 'douyin' :
+        /weibo/.test(src.ref_host)                 ? 'weibo' :
+        'web'
+      ) : 'direct');
+    LS.set('signup_source', src);
+  } catch(e){ /* ignore */ }
+})();
+
 // 在测评完成时存历史
 const _origShowResult = showResult;
 showResult = function() {
@@ -1802,6 +1835,7 @@ async function cloudUpsertAccount(account){
     email: account.email || null,
     industry: (LS.get('user',{}).industry) || null,
     goal:     (LS.get('user',{}).goal) || null,
+    signup_source: LS.get('signup_source', null),
   };
   const { data, error } = await cloud.sb.from('accounts').upsert(row, { onConflict:'phone' }).select().single();
   if (error){ console.warn('[ATLAS] upsert account 失败', error); return null; }

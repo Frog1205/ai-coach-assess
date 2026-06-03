@@ -1,6 +1,7 @@
 name: DB Health Check
 
-# 手动触发的数据库健康检查 — 查行数 + 抽样 + schema 自省,绕开本机代理。
+# 手动触发 ATLAS 数据库健康诊断,绕开本机代理。
+# 报告:行数 / 注册分布 / 段位分布 / 题库版本使用 / 流量来源 / 漏斗转化
 
 on:
   workflow_dispatch:
@@ -9,32 +10,38 @@ jobs:
   health:
     runs-on: ubuntu-latest
     steps:
-      - name: Query all tables
+      - name: Diagnose
         run: |
-          set +e   # 不因单行报错中断,看完整诊断
+          set +e
           URL="${{ secrets.SUPABASE_URL }}/rest/v1"
           KEY="${{ secrets.SUPABASE_ANON_KEY }}"
-          AUTH_H=(-H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          H=(-H "apikey: $KEY" -H "Authorization: Bearer $KEY")
 
-          echo "═════════ 1. ROW COUNTS ═════════"
+          echo "═════════ ① 行数 ═════════"
           for t in accounts assessments checkins reviews qbank_versions; do
-            cr=$(curl -sS -D - -o /dev/null \
-              "${AUTH_H[@]}" \
+            cr=$(curl -sS -D - -o /dev/null "${H[@]}" \
               -H "Prefer: count=exact" -H "Range: 0-0" \
               "$URL/$t?select=id" | grep -i "^content-range" | tr -d '\r')
-            printf "  %-18s %s\n" "$t" "${cr:-(RLS 隐藏 / 列不存在)}"
+            printf "  %-18s %s\n" "$t" "${cr:-(RLS 隐藏)}"
           done
 
           echo ""
-          echo "═════════ 2. SCHEMA SAMPLE (各表 1 行,看真实列名) ═════════"
-          for t in accounts assessments checkins reviews qbank_versions; do
-            echo "── $t ──"
-            curl -sS "${AUTH_H[@]}" "$URL/$t?select=*&limit=1" | head -c 800
-            echo ""
-            echo ""
-          done
-
-          echo "═════════ 3. accounts 注册时间分布 ═════════"
-          curl -sS "${AUTH_H[@]}" \
-            "$URL/accounts?select=created_at&order=created_at.desc&limit=50"
+          echo "═════════ ② 账户注册时间 (最近 20) ═════════"
+          curl -sS "${H[@]}" "$URL/accounts?select=created_at,name,industry,signup_source&order=created_at.desc&limit=20"
           echo ""
+
+          echo ""
+          echo "═════════ ③ 测评 — 段位分布 + 题库版本 ═════════"
+          curl -sS "${H[@]}" "$URL/assessments?select=total,level,qbank_version,taken_at&order=taken_at.desc&limit=50"
+          echo ""
+
+          echo ""
+          echo "═════════ ④ 转化漏斗 ═════════"
+          ACC=$(curl -sS -D - -o /dev/null "${H[@]}" -H "Prefer: count=exact" -H "Range: 0-0" "$URL/accounts?select=id" | grep -i "^content-range" | sed -E 's/.*\/([0-9]+).*/\1/' | tr -d '\r')
+          ASM=$(curl -sS -D - -o /dev/null "${H[@]}" -H "Prefer: count=exact" -H "Range: 0-0" "$URL/assessments?select=id" | grep -i "^content-range" | sed -E 's/.*\/([0-9]+).*/\1/' | tr -d '\r')
+          CHK=$(curl -sS -D - -o /dev/null "${H[@]}" -H "Prefer: count=exact" -H "Range: 0-0" "$URL/checkins?select=id" | grep -i "^content-range" | sed -E 's/.*\/([0-9]+).*/\1/' | tr -d '\r')
+          REV=$(curl -sS -D - -o /dev/null "${H[@]}" -H "Prefer: count=exact" -H "Range: 0-0" "$URL/reviews?select=id" | grep -i "^content-range" | sed -E 's/.*\/([0-9]+).*/\1/' | tr -d '\r')
+          echo "  注册账户:   $ACC"
+          echo "  完成测评:   $ASM  ($([ "$ACC" -gt 0 ] && echo "scale=1; $ASM*100/$ACC" | bc 2>/dev/null || echo '-')%)"
+          echo "  打卡记录:   $CHK"
+          echo "  写过复盘:   $REV"

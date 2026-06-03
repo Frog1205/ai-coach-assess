@@ -1,0 +1,32 @@
+name: Keep Supabase Alive
+
+# Supabase 免费版:7 天无活动则暂停项目。
+# 本 workflow 每 5 天发起 1 次 SELECT,保持项目活跃,永不自动暂停。
+# 同样使用 deploy.yml 已配置的 SUPABASE_URL / SUPABASE_ANON_KEY secrets。
+
+on:
+  schedule:
+    - cron: '0 3 */5 * *'    # 每 5 天 UTC 03:00 (北京时间 11:00)
+  workflow_dispatch:           # 也支持手动触发
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST
+        run: |
+          set -e
+          URL="${{ secrets.SUPABASE_URL }}/rest/v1/qbank_versions?select=version&limit=1"
+          KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+          code=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
+            -H "apikey: $KEY" \
+            -H "Authorization: Bearer $KEY" \
+            "$URL")
+          echo "HTTP $code"
+          cat /tmp/resp.json
+          # 200/206 都算成功(206 是带 range 的)
+          if [ "$code" != "200" ] && [ "$code" != "206" ]; then
+            echo "::error::Keep-alive ping failed with HTTP $code"
+            exit 1
+          fi
+          echo "✓ Supabase project alive"

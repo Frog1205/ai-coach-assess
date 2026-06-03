@@ -32,6 +32,7 @@ jobs:
           window.SUPABASE_URL      = '${{ secrets.SUPABASE_URL }}';
           window.SUPABASE_ANON_KEY = '${{ secrets.SUPABASE_ANON_KEY }}';
           window.ATLAS_AUTO_BACKFILL = true;
+          window.DEEPSEEK_API_KEY  = '${{ secrets.DEEPSEEK_API_KEY }}';
           ENVEOF
         working-directory: .
 

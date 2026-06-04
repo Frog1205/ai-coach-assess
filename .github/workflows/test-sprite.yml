@@ -1,0 +1,56 @@
+name: Test Sprite Proxy
+
+# 手动触发 — 测 Supabase Edge Function (swift-endpoint) → DeepSeek 链路
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call sprite proxy
+        run: |
+          set -e
+          URL="${{ secrets.SUPABASE_URL }}/functions/v1/swift-endpoint"
+          KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+
+          echo "═════ Test 1: 正常调用 ═════"
+          code=$(curl -sS -o /tmp/resp.json -w "%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            -H "apikey: $KEY" \
+            -H "Authorization: Bearer $KEY" \
+            -H "Origin: https://frog1205.github.io" \
+            "$URL" \
+            -d '{
+              "messages":[
+                {"role":"system","content":"你是 ATLAS 助手,中文回答,30 字内。"},
+                {"role":"user","content":"破局者段位推荐哪个方案?"}
+              ],
+              "max_tokens":200
+            }')
+          echo "HTTP $code"
+          cat /tmp/resp.json
+          echo ""
+          if [ "$code" != "200" ]; then
+            echo "::error::Sprite proxy failed with HTTP $code"
+            exit 1
+          fi
+
+          # 提取 DeepSeek 文本
+          reply=$(python3 -c "import json,sys; d=json.load(open('/tmp/resp.json')); print(d.get('choices',[{}])[0].get('message',{}).get('content','(no content)'))")
+          echo ""
+          echo "═════ DeepSeek 实际回复 ═════"
+          echo "$reply"
+
+          echo ""
+          echo "═════ Test 2: 错误来源被 CORS 挡(应当还是返回数据,但 Origin 头改)═════"
+          curl -sS -D - -o /dev/null -X POST \
+            -H "Content-Type: application/json" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+            -H "Origin: https://evil.example.com" \
+            "$URL" \
+            -d '{"messages":[{"role":"user","content":"hi"}]}' | grep -i "access-control-allow-origin" | tr -d '\r'
+
+          echo ""
+          echo "✓ Sprite 链路验证通过"

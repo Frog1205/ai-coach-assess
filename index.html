@@ -1572,7 +1572,7 @@ async function callDeepSeek(text, ctx){
     { role:'user', content: text },
   ];
 
-  const r = await fetch(`${supaUrl}/functions/v1/sprite`, {
+  const r = await fetch(`${supaUrl}/functions/v1/swift-endpoint`, {
     method: 'POST',
     headers: {
       'Content-Type':'application/json',

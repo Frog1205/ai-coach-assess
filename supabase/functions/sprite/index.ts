@@ -1,14 +1,14 @@
 // ATLAS Sprite Edge Function
+// 实际部署 slug: swift-endpoint(Supabase 创建时自动生成,无法重命名)
 // ───────────────────────────────────────────────────────────────
 // 前端 → 本函数 → DeepSeek。DEEPSEEK_API_KEY 留在 Supabase 服务端,
 // 永不暴露给浏览器。CORS 白名单防止其他站点白嫖。
 //
 // 部署:
-//   方法 A(CLI): supabase functions deploy sprite --no-verify-jwt
-//   方法 B(Dashboard): Edge Functions → Create a new function → 粘贴本文件
+//   Dashboard: Edge Functions → Create a new function → 粘贴本文件
+//   设置时关闭 "Verify JWT with legacy secret"
 //
-// 设置 secret(2 选 1):
-//   CLI:   supabase secrets set DEEPSEEK_API_KEY=sk-xxx
+// 设置 secret:
 //   Dashboard: Edge Functions → Secrets → Add new secret DEEPSEEK_API_KEY
 // ───────────────────────────────────────────────────────────────
 

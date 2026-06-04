@@ -614,13 +614,27 @@ function switchTab(name){
 }
 
 async function loadQbanks(){
-  const { data } = await getSB().from('qbank_versions').select('*').order('updated_at', { ascending:false });
+  // 1) 拉云端题库(DB)
+  const { data: dbData } = await getSB().from('qbank_versions').select('*').order('updated_at', { ascending:false });
+  // 2) 拉静态归档(qbank/index.json),含从 qbank-archive/ 提炼出的历史版本
+  let archives = [];
+  try {
+    const r = await fetch('qbank/index.json', { cache:'no-store' });
+    if (r.ok) archives = (await r.json()).archives || [];
+  } catch (e) { console.warn('[admin] 归档清单加载失败', e); }
+
+  // 3) 合并:DB 版本优先,归档里若与 DB 版本号重复则跳过(以 DB 为准)
+  const dbVersions = new Set((dbData || []).map(q => q.version));
+  const archiveOnly = archives.filter(a => !dbVersions.has(a.version));
+
   const list = document.getElementById('qbank-list');
-  if (!data || !data.length){
-    list.innerHTML = '<div class="empty">尚无题库记录,请在 SQL Editor 执行 supabase/seed-qbank.sql</div>';
+  if (!dbData?.length && !archiveOnly.length){
+    list.innerHTML = '<div class="empty">尚无题库记录</div>';
     return;
   }
-  list.innerHTML = data.map(q => `
+
+  // DB 版本(可激活)
+  const dbHtml = (dbData || []).map(q => `
     <div class="qbank-row">
       <div>
         <span class="qbank-ver">${q.version}</span>
@@ -630,6 +644,21 @@ async function loadQbanks(){
         ? '<span class="qbank-active">当前激活</span>'
         : `<button class="qbank-act" onclick="activateQbank('${q.version}')">设为激活</button>`}
     </div>`).join('');
+
+  // 归档版本(只读,展示用,可下载 JSON 查看)
+  const archiveHtml = archiveOnly.length ? `
+    <div style="margin:24px 0 12px;font-size:12px;letter-spacing:.15em;color:var(--muted)">─────  历史归档(只读) ─────</div>
+    ${archiveOnly.map(a => `
+      <div class="qbank-row" style="opacity:.78">
+        <div>
+          <span class="qbank-ver">${a.version}</span>
+          <span class="qbank-info">${a.updated_at} · ${a.n_questions} 题 · 归档</span>
+        </div>
+        <a class="qbank-act" href="${a.file}" target="_blank" style="text-decoration:none">查看 JSON ↗</a>
+      </div>`).join('')}
+  ` : '';
+
+  list.innerHTML = dbHtml + archiveHtml;
 }
 
 async function activateQbank(version){

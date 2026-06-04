@@ -645,21 +645,82 @@ async function loadQbanks(){
         : `<button class="qbank-act" onclick="activateQbank('${q.version}')">设为激活</button>`}
     </div>`).join('');
 
-  // 归档版本(只读,展示用,可下载 JSON 查看)
+  // 归档版本(只读,内嵌预览试卷)
+  const DIMS = ['工具认知','提示词能力','内容创作','自动化思维','工作流整合'];
   const archiveHtml = archiveOnly.length ? `
     <div style="margin:24px 0 12px;font-size:12px;letter-spacing:.15em;color:var(--muted)">─────  历史归档(只读) ─────</div>
-    ${archiveOnly.map(a => `
-      <div class="qbank-row" style="opacity:.78">
+    ${archiveOnly.map((a,i) => `
+      <div class="qbank-row" style="opacity:.85">
         <div>
           <span class="qbank-ver">${a.version}</span>
           <span class="qbank-info">${a.updated_at} · ${a.n_questions} 题 · 归档</span>
         </div>
-        <a class="qbank-act" href="${a.file}" target="_blank" style="text-decoration:none">查看 JSON ↗</a>
-      </div>`).join('')}
+        <button class="qbank-act" onclick="toggleQbankPreview('arc-${i}','${a.file}')" id="btn-arc-${i}">展开试卷 ▾</button>
+      </div>
+      <div id="prev-arc-${i}" class="qbank-preview" style="display:none"></div>
+    `).join('')}
   ` : '';
 
   list.innerHTML = dbHtml + archiveHtml;
 }
+
+// 试卷内嵌预览 — 点开展开 20 道题,再点收起
+window.__qbankCache = window.__qbankCache || {};
+async function toggleQbankPreview(slot, file){
+  const box = document.getElementById('prev-' + slot);
+  const btn = document.getElementById('btn-' + slot);
+  if (box.style.display !== 'none'){
+    box.style.display = 'none';
+    btn.textContent = '展开试卷 ▾';
+    return;
+  }
+  if (!window.__qbankCache[file]){
+    box.innerHTML = '<div style="padding:18px;color:var(--muted)">加载中…</div>';
+    box.style.display = 'block';
+    try {
+      const r = await fetch(file, { cache:'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      window.__qbankCache[file] = await r.json();
+    } catch (e){
+      box.innerHTML = `<div style="padding:18px;color:#C0392B">加载失败:${e.message}</div>`;
+      btn.textContent = '展开试卷 ▾';
+      return;
+    }
+  }
+  const data = window.__qbankCache[file];
+  const DIMS = ['工具认知','提示词能力','内容创作','自动化思维','工作流整合'];
+  const DIM_COLORS = ['#1A4D8C','#0F9D6E','#C9A14A','#6C3ABF','#C0392B'];
+  const byDim = {0:[],1:[],2:[],3:[],4:[]};
+  data.questions.forEach((q,idx) => byDim[q.d].push({...q,idx:idx+1}));
+  box.innerHTML = `
+    <div style="padding:24px 28px;background:#FAF7F0;border-top:1px solid var(--border)">
+      <div style="font-size:11px;letter-spacing:.2em;color:var(--muted);margin-bottom:18px">
+        题库 v${data.version} · ${data.updated_at} · 共 ${data.questions.length} 题
+      </div>
+      ${DIMS.map((dim,i) => `
+        <div style="margin-bottom:24px">
+          <div style="display:flex;align-items:center;gap:8px;font-family:var(--serif);font-size:15px;color:${DIM_COLORS[i]};margin-bottom:10px;font-weight:500">
+            <span style="display:inline-block;width:18px;height:18px;background:${DIM_COLORS[i]};color:#fff;border-radius:50%;font-size:11px;text-align:center;line-height:18px;font-family:var(--latin)">${i}</span>
+            ${dim} <span style="color:var(--muted);font-size:11px;font-weight:400">(${byDim[i].length} 题)</span>
+          </div>
+          ${byDim[i].map(q => `
+            <div style="margin:8px 0 16px;padding:12px 16px;background:#fff;border-left:2px solid ${DIM_COLORS[i]}">
+              <div style="font-size:13px;color:var(--ink);margin-bottom:8px;line-height:1.6">
+                <span style="color:var(--muted);font-family:var(--latin);margin-right:6px">Q${q.idx}.</span>${escapeAttr(q.q)}
+              </div>
+              ${q.a.map((opt,oi) => `
+                <div style="font-size:12px;color:var(--muted);padding:3px 0 3px 14px;line-height:1.6">
+                  <span style="color:${DIM_COLORS[i]};font-family:var(--latin);margin-right:6px">${'ABCD'[oi]}.</span>${escapeAttr(opt)}
+                  <span style="color:#ccc;margin-left:6px;font-size:10px">(${oi} 分)</span>
+                </div>`).join('')}
+            </div>`).join('')}
+        </div>`).join('')}
+    </div>`;
+  box.style.display = 'block';
+  btn.textContent = '收起 ▴';
+}
+
+function escapeAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 async function activateQbank(version){
   if (!confirm(`确定切换到题库 ${version}?所有学员下次访问会看到新版`)) return;

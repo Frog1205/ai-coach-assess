@@ -38,14 +38,16 @@ AI 时代的杠杆**在体系而非工具**,在**陪跑而非课程**。
 
 | 渠道 | 信息 |
 |---|---|
-| 📧 邮箱 | `你的邮箱@example.com` ← **TODO: 填真实邮箱** |
-| 💬 微信 | <img src="qr-mastermind.png" width="160" alt="ATLAS 总顾问微信"> <br/> 扫码备注「ATLAS 咨询」 |
-| 🆔 微信号 | `你的微信号` ← **TODO: 填真实 ID** |
+| 📧 Email | <a href="mailto:1123817370@qq.com">1123817370@qq.com</a> |
+| 💬 WeChat | <img src="qr-mastermind.png" width="160" alt="ATLAS Founder WeChat"> <br/> Scan with note 「ATLAS 咨询」 |
+| 🆔 WeChat ID | `xqr1019` |
 
-## 关于作者
+## About the Author
 
-`你的姓名` · `一句话定位(如:连续创业者 / 医学专家 / AI 教练)`
-← **TODO: 替换为真实信息**
+**Frog** — Serial entrepreneur. Building at the intersection of **Agentic Data** and product.
+**Vibe Coder** by default. **AI Coach** to experts & executives navigating the shift from "using AI" to "compounding with AI".
+
+> Reach out if you're a domain expert turning your know-how into an AI-leveraged practice — ATLAS exists for exactly that conversation.
 
 ---
 
